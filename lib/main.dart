@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:matisse/images/image_app.dart';
 import 'package:matisse/language.dart';
+import 'package:matisse/login/login.dart';
 import 'package:matisse/setup_widget.dart';
 import 'package:matisse/url_launcher.dart';
 import 'colors/colors_app.dart';
@@ -100,7 +101,9 @@ class WelcomeScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SignInPage()));
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF9DD7FF),
                           foregroundColor: Colors.black,
