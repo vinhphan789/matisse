@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:matisse/images/image_app.dart';
+import 'package:matisse/language.dart';
 import 'package:matisse/setup_widget.dart';
 import 'colors/colors_app.dart';
 import 'package:flutter/services.dart';
@@ -53,7 +54,9 @@ class WelcomeScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.topRight,
                     child: IconButton(
-                      onPressed: () {},
+                      onPressed: () {
+                       Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguagePage()));
+                      },
                       icon: const Icon(
                         Icons.language,
                         color: Colors.white,
