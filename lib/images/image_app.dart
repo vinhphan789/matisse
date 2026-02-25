@@ -8,6 +8,7 @@ class ImageApp {
   static const String webGameTest = '${_basePath}game_test_image.png';
   static const String matisseLogo = '${_basePath}matisse-logo@3x.png';
   static const String keyLockIcon = '${_basePath}key-image@3x.png';
+  static const String languageIcon = '${_basePath}language-icon@3x.png';
 
 // key-image@3x.png
 

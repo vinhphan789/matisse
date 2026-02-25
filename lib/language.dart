@@ -45,9 +45,9 @@ class _LanguagePageState extends State<LanguagePage> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: ColorApp.blackMain1E1E1E,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: ColorApp.blackMain1E1E1E,
         title: const SetupTextWidget(
           titleLabel: "Language",
           textColor: ColorApp.whiteMainColor,

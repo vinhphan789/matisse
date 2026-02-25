@@ -36,18 +36,12 @@ class WelcomeScreen extends StatelessWidget {
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.white,           // 🎨 Màu nền status bar là trắng
         statusBarIconBrightness: Brightness.light, // 🔷 Icon màu tối (để nhìn rõ trên nền trắng)
-        statusBarBrightness: Brightness.light,    // 🍎 Cho iOS
+        statusBarBrightness: Brightness.dark,    // 🍎 Cho iOS
       ),
       child: Scaffold(
         body: Container(
           // 🌑 Background gradient đen
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F), Color(0xFF000000)],
-            ),
-          ),
+          color: ColorApp.blackMain1E1E1E,
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -58,13 +52,9 @@ class WelcomeScreen extends StatelessWidget {
                     alignment: Alignment.topRight,
                     child: IconButton(
                       onPressed: () {
-                       Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguagePage()));
+                       Navigator.push(context, CupertinoPageRoute(builder: (_) => const LanguagePage()));
                       },
-                      icon: const Icon(
-                        Icons.language,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                      icon: Image.asset(ImageApp.languageIcon, width: 24, height: 24,),
                     ),
                   ),
                   Container(

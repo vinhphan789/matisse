@@ -7,6 +7,8 @@ import 'package:matisse/language.dart';
 import 'package:matisse/login/forgot_password.dart';
 import 'package:matisse/setup_widget.dart';
 
+import '../images/image_app.dart';
+
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
 
@@ -55,7 +57,7 @@ class _SignInPageState extends State<SignInPage> {
           /// 🌍 Icon language (push sang LanguagePage)
           actions: [
             IconButton(
-              icon: const Icon(Icons.language, color: Colors.white),
+              icon: Image.asset(ImageApp.languageIcon, width: 24, height: 24,),
               onPressed: () {
                 Navigator.push(
                   context,
