@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:matisse/images/image_app.dart';
 import 'package:matisse/language.dart';
@@ -102,7 +103,7 @@ class WelcomeScreen extends StatelessWidget {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SignInPage()));
+                          Navigator.push(context, CupertinoPageRoute(builder: (_) => const SignInPage()));
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF9DD7FF),
