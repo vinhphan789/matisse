@@ -65,6 +65,11 @@ class FontApp {
     weight: FontWeight.w700,
   );
 
+  static const AppFont robotoMedium = AppFont(
+    family: _family,
+    weight: FontWeight.w500,
+  );
+
   static const AppFont robotoBlack = AppFont(
     family: _family,
     weight: FontWeight.w900,

@@ -1,8 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:matisse/app_router.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/language.dart';
+import 'package:matisse/login/forgot_password.dart';
 import 'package:matisse/setup_widget.dart';
 
 class SignInPage extends StatefulWidget {
@@ -144,7 +146,9 @@ class _SignInPageState extends State<SignInPage> {
               /// 🔑 FORGOT PASSWORD
               Center(
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(context, CupertinoPageRoute(builder: (_) => const ForgotPasswordScreen()));
+                  },
                   child: const Text(
                     "Forgot your password?",
                     style: TextStyle(color: Colors.white70),

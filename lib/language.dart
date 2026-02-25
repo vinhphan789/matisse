@@ -150,7 +150,7 @@ class _LanguagePageState extends State<LanguagePage> {
       ),
 
       bottomNavigationBar: Container(
-        color: ColorApp.grayBottomnColor,
+        color: ColorApp.gray2A2A2AColor,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: SafeArea(
           top: false,
