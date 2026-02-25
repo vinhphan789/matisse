@@ -8,4 +8,7 @@ class ColorApp {
   static const Color gray2A2A2AColor = Color(0xFF2A2A2A);
   static const Color blueMainColor = Color(0xFF90CAF9);
   static const Color grayBorder525252Color = Color(0xFF525252);
+  static const Color grayBackground90CAF9Color = Color(0xFF2E2E2E);
+
+
 }

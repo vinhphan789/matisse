@@ -91,6 +91,7 @@ class _SignInPageState extends State<SignInPage> {
               /// 📧 EMAIL FIELD
               _inputField(
                 label: "Email address",
+                hinText: "Enter email address",
                 controller: emailCtrl,
                 focusNode: emailFocus,
               ),
@@ -99,6 +100,7 @@ class _SignInPageState extends State<SignInPage> {
 
               _inputField(
                 label: "Password",
+                hinText: "Enter password",
                 controller: passCtrl,
                 focusNode: passFocus,
                 obscureText: obscure,
@@ -116,28 +118,23 @@ class _SignInPageState extends State<SignInPage> {
               /// ▶️ CONTINUE BUTTON
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 42,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     /// Đổi màu theo trạng thái valid
                     backgroundColor: isValid
                         ? ColorApp.blueMainColor
                         : Colors.grey.shade700,
-                    disabledBackgroundColor: Colors.grey.shade700,
+                    disabledBackgroundColor: ColorApp.grayBackground90CAF9Color,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppSpacing.xs4),
                     ),
                     elevation: 0,
                   ),
                   onPressed: isValid ? () {} : null,
-                  child: const Text(
-                    "CONTINUE",
-                    style: TextStyle(
-                      letterSpacing: 1,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: SetupTextWidget(titleLabel: "CONTINUE",
+                    font: FontApp.robotoMedium, fontSize: 15,
+                      textColor: isValid ? ColorApp.whiteMainColor : ColorApp.grayBorder525252Color),
                 ),
               ),
 
@@ -178,51 +175,56 @@ class _SignInPageState extends State<SignInPage> {
   /// ============================================================
   Widget _inputField({
     required String label,
+    required String hinText,
     required TextEditingController controller,
     required FocusNode focusNode,
     bool obscureText = false,
     Widget? suffix,
   }) {
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
+    return SizedBox(
+      height: 50,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
 
-      /// rebuild UI khi focus đổi
-      onTap: () => setState(() {}),
-      onChanged: (_) => setState(() {}),
-      onEditingComplete: () => setState(() {}),
+        /// rebuild UI khi focus đổi
+        onTap: () => setState(() {}),
+        onChanged: (_) => setState(() {}),
+        onEditingComplete: () => setState(() {}),
 
-      obscureText: obscureText,
+        obscureText: obscureText,
 
-      /// ❌ text bên trong giữ nguyên màu trắng
-      style: const TextStyle(color: Colors.white),
+        /// ❌ text bên trong giữ nguyên màu trắng
+        style: const TextStyle(color: Colors.white),
 
-      decoration: InputDecoration(
-        labelText: label,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hinText,
+          hintStyle: TextStyle(color: ColorApp.grayBorder525252Color),
 
-        /// label luôn ở trên
-        floatingLabelBehavior: FloatingLabelBehavior.always,
+          /// label luôn ở trên
+          floatingLabelBehavior: FloatingLabelBehavior.always,
 
-        /// ⭐ CHỈ label đổi màu khi focus
-        labelStyle: TextStyle(
-          color: focusNode.hasFocus ? ColorApp.blueMainColor : Colors.grey,
+          /// ⭐ CHỈ label đổi màu khi focus
+          labelStyle: TextStyle(
+            color: focusNode.hasFocus ? ColorApp.blueMainColor : Colors.grey,
+          ),
+
+          filled: true,
+          fillColor: const Color(0xFF1E1E1E),
+
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.xs4),
+            borderSide: BorderSide(color: Colors.grey.shade700),
+          ),
+
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.xs4),
+            borderSide: const BorderSide(color: ColorApp.blueMainColor),
+          ),
+
+          suffixIcon: suffix,
         ),
-
-        filled: true,
-        fillColor: const Color(0xFF1E1E1E),
-
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.xs4),
-          borderSide: BorderSide(color: Colors.grey.shade700),
-        ),
-
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.xs4),
-          borderSide: const BorderSide(color: ColorApp.blueMainColor),
-        ),
-
-        suffixIcon: suffix,
       ),
     );
   }
