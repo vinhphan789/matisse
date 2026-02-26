@@ -6,7 +6,13 @@ import '../colors/colors_app.dart';
 
 
 class LanguagePage extends StatefulWidget {
-  const LanguagePage({super.key});
+  final String? selected;
+
+  const LanguagePage({
+    super.key,
+    this.selected = '',
+
+  });
 
   @override
   State<LanguagePage> createState() => _LanguagePageState();
@@ -15,13 +21,16 @@ class LanguagePage extends StatefulWidget {
 class _LanguagePageState extends State<LanguagePage> {
   final TextEditingController _searchCtrl = TextEditingController();
   final LanguageViewModel vm = LanguageViewModel();
-  String? _selected = 'English';
+  String? _selected;
   String _keyword = '';
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    _selected = widget.selected;
+
+    print("👉 _selected init: $_selected"); // xem giá trị là gì
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       vm.fetchLanguage();

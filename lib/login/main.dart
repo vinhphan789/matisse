@@ -42,8 +42,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  String selected = "English";
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +75,15 @@ class WelcomeScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.topRight,
                     child: IconButton(
-                      onPressed: () {
-                       Navigator.push(context, CupertinoPageRoute(builder: (_) => const LanguagePage()));
+                      onPressed: () async {
+                        final result = await Navigator.push(context, CupertinoPageRoute(builder: (_) => LanguagePage(
+                          selected: selected,
+                        )));
+                       if (result != null) {
+                         setState(() {
+                           selected = result; // ✅ wrap trong setState
+                         });
+                       }
                       },
                       icon: Image.asset(ImageApp.languageIcon, width: 24, height: 24,),
                     ),
