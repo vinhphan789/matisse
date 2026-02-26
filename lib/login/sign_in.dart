@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:matisse/app_router.dart';
+import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/colors/colors_app.dart';
-import 'package:matisse/language.dart';
+import 'package:matisse/login/language.dart';
 import 'package:matisse/login/forgot_password.dart';
-import 'package:matisse/setup_widget.dart';
+import 'package:matisse/extension/setup_widget.dart';
 
 import '../images/image_app.dart';
 

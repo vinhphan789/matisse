@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:matisse/app_router.dart';
+import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/images/image_app.dart';
-import 'package:matisse/setup_widget.dart';
+import 'package:matisse/extension/setup_widget.dart';
 
 /// Màn hình "Quên mật khẩu" - Forgot Password Screen
 /// Cho phép người dùng nhập email để nhận link đặt lại mật khẩu
