@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:matisse/api_endpoint/api_endpoint.dart';
+import 'package:matisse/extension/loading.dart';
 
 import '../model/model.dart';
 import '../next_work/app_service.dart';
@@ -21,13 +22,10 @@ class LanguageViewModel extends ChangeNotifier {
 
   /// Hàm gọi API
   Future<void> fetchLanguage() async {
+    LoadingService().show();
     print("🔥🔥🔥 fetchLanguage CALLED");
     try {
-      isLoading = true;
-      notifyListeners(); // update UI
-
       final response = await _api.get(ApiEndpoint.languages);
-
       final List data = response.data;
 
       // Parse list JSON -> List<Model>
@@ -36,10 +34,14 @@ class LanguageViewModel extends ChangeNotifier {
       error = null;
     } catch (e) {
 
+      LoadingService().hide();
       error = e.toString();
     } finally {
       isLoading = false;
+      LoadingService().hide();
       notifyListeners();
     }
   }
 }
+
+

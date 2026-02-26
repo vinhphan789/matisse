@@ -5,8 +5,13 @@ import 'package:matisse/login/language.dart';
 import 'package:matisse/login/sign_in.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/url_launcher.dart';
+import 'package:provider/provider.dart';
 import '../colors/colors_app.dart';
 import 'package:flutter/services.dart';
+
+import '../extension/loading.dart';
+final GlobalKey<NavigatorState> navigatorKey =
+GlobalKey<NavigatorState>();
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +25,19 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'RobotoCustom'),
-      home: const WelcomeScreen(),
+
+      // 👇 DÙNG builder thay vì home: Stack
+      builder: (context, child) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            child!, // 👈 toàn bộ navigator ở đây
+            GlobalLoadingOverlay(), // 👈 luôn nằm trên cùng
+          ],
+        );
+      },
+
+      home: const WelcomeScreen(), // 👈 màn hình đầu tiên
     );
   }
 }

@@ -9,3 +9,4 @@ Future<void> openLinkInBrowser(String url) async {
     throw Exception('Could not launch $url');
   }
 }
+

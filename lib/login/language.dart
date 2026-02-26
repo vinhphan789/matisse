@@ -23,7 +23,9 @@ class _LanguagePageState extends State<LanguagePage> {
     // TODO: implement initState
     super.initState();
 
-    vm.fetchLanguage();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      vm.fetchLanguage();
+    });
   }
 
 
