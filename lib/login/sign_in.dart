@@ -7,6 +7,7 @@ import 'package:matisse/login/language.dart';
 import 'package:matisse/login/forgot_password.dart';
 import 'package:matisse/extension/setup_widget.dart';
 
+import '../home/project.dart';
 import '../images/image_app.dart';
 
 class SignInPage extends StatefulWidget {
@@ -133,7 +134,9 @@ class _SignInPageState extends State<SignInPage> {
                     ),
                     elevation: 0,
                   ),
-                  onPressed: isValid ? () {} : null,
+                  onPressed: isValid ? () {
+                    Navigator.push(context, CupertinoPageRoute(builder: (_) => ProjectsScreen()));
+                  } : null,
                   child: SetupTextWidget(titleLabel: "CONTINUE",
                     font: FontApp.robotoMedium, fontSize: 15,
                       textColor: isValid ? ColorApp.whiteMainColor : ColorApp.grayBorder525252Color),
