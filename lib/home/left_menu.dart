@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:matisse/images/image_app.dart';
 
 // ─────────────────────────────────────────────
 // MATISSE DRAWER
@@ -35,7 +36,7 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
             // ── Logo ──
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
-              child: _MatisseLogo(),
+              child: Image.asset(ImageApp.matisseMenuIcon, width: 77, height: 21,),
             ),
 
             // ── Projects ──
@@ -222,86 +223,6 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
       Divider(color: _dividerColor, height: 1, thickness: 1);
 }
 
-// ─────────────────────────────────────────────
-// MATISSE LOGO
-// ─────────────────────────────────────────────
-
-class _MatisseLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return RichText(
-      text: const TextSpan(
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 26,
-          fontWeight: FontWeight.w300,
-          letterSpacing: 2,
-        ),
-        children: [
-          TextSpan(text: 'mati'),
-          // coloured dots sit between letters via a WidgetSpan
-        ],
-      ),
-    );
-  }
-}
-
-// Simpler logo using Stack approach
-class MatisseLogo extends StatelessWidget {
-  const MatisseLogo({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        const Text(
-          'mati',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 26,
-            fontWeight: FontWeight.w300,
-            letterSpacing: 1.5,
-          ),
-        ),
-        // Three dots stacked
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              // top dot red
-              _Dot(color: Color(0xFFFF4444), size: 5),
-              SizedBox(height: 1),
-              // middle dot yellow
-              _Dot(color: Color(0xFFFFCC00), size: 5),
-              SizedBox(height: 1),
-              // bottom dot blue
-              _Dot(color: Color(0xFF4488FF), size: 5),
-            ],
-          ),
-        ),
-        const Text(
-          'sse',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 26,
-            fontWeight: FontWeight.w300,
-            letterSpacing: 1.5,
-          ),
-        ),
-        const Text(
-          '°',
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: 20,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _Dot extends StatelessWidget {
   final Color color;
@@ -339,7 +260,6 @@ class MatisseMainScreen extends StatelessWidget {
             onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
         ),
-        title: const MatisseLogo(),
         actions: [
           // Avatar
           const CircleAvatar(

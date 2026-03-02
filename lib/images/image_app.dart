@@ -9,6 +9,11 @@ class ImageApp {
   static const String matisseLogo = '${_basePath}matisse-logo@3x.png';
   static const String keyLockIcon = '${_basePath}key-image@3x.png';
   static const String languageIcon = '${_basePath}language-icon@3x.png';
+  static const String matisseMenuIcon = '${_basePath}matisse-logo-menu-image@3x.png';
+  static const String fileMenuIcon = '${_basePath}fileMenu-icon@3x.png';
+  static const String recipeIcon = '${_basePath}recipe-icon@3x.png';
+  static const String stainingIcon = '${_basePath}staining-studio-icon@3x.png';
+
 
 // key-image@3x.png
 
