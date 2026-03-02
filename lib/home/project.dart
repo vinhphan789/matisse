@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_popup/flutter_popup.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/extension/setup_widget.dart';
@@ -202,7 +203,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 font: FontApp.robotoMedium,
                 textColor: Colors.black,),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4DA3FF),
+                backgroundColor: ColorApp.blueMainColor,
                 foregroundColor: Colors.black,
                 padding:
                 const EdgeInsets.symmetric(horizontal: 20),
@@ -353,18 +354,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () => _showProjectOptions(project),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                color: Color(0xFF3A3A3C),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
-            ),
-          ),
+          _buildPopupMenu(project),
         ],
       ),
     );
@@ -422,33 +412,63 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   //   );
   // }
 
-  void _showProjectOptions(Project project) {
-    showModalBottomSheet(
-      context: context,
+  Widget _buildPopupMenu(Project project) {
+    return CustomPopup(
+      arrowColor: const Color(0xFF2C2C2E),
       backgroundColor: const Color(0xFF2C2C2E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) => Wrap(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            leading: const Icon(Icons.edit, color: Colors.white),
-            title: const Text('Rename', style: TextStyle(color: Colors.white)),
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.share, color: Colors.white),
-            title: const Text('Share', style: TextStyle(color: Colors.white)),
-            onTap: () => Navigator.pop(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.redAccent),
-            title: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
-            onTap: () => Navigator.pop(context),
-          ),
+          _buildPopupItem('Share', onTap: () {}),
+          _buildPopupItem('Duplicate', onTap: () {}),
+          _buildPopupItem('Manage', onTap: () {}),
+          _buildPopupItem('Delete', onTap: () {}, isDestructive: true),
         ],
       ),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: Color(0xFF3A3A3C),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
+      ),
     );
+  }
+
+  Widget _buildPopupItem(String label, {required VoidCallback onTap, bool isDestructive = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isDestructive ? Colors.redAccent : Colors.white,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleMenuAction(String action, Project project) {
+    switch (action) {
+      case 'share':
+      // TODO: xử lý share
+        break;
+      case 'duplicate':
+      // TODO: xử lý duplicate
+        break;
+      case 'manage':
+      // TODO: xử lý manage
+        break;
+      case 'delete':
+      // TODO: xử lý delete
+        break;
+    }
   }
 
   String _formatDate(DateTime dt) {
