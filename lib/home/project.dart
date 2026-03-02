@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:matisse/colors/colors_app.dart';
+import 'package:matisse/extension/app_router.dart';
+import 'package:matisse/extension/setup_widget.dart';
 
 // ============================================================
 // MODEL: Dữ liệu dự án
@@ -63,6 +66,15 @@ final List<Project> sampleProjects = [
     modifiedBy: 'Marat',
     thumbnailUrl: 'tooth_dani',
   ),
+  Project(
+    id: '5',
+    name: 'Dani copy (4)',
+    createdAt: DateTime(2026, 1, 29, 10, 49),
+    sharedWith: ['An Phan', 'Chung'],
+    lastModifiedAt: DateTime(2026, 2, 3, 17, 17),
+    modifiedBy: 'Marat',
+    thumbnailUrl: 'tooth_dani',
+  ),
 ];
 
 // ============================================================
@@ -106,7 +118,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           Expanded(child: _buildProjectList()),
         ],
       ),
-      floatingActionButton: _buildChatFAB(),
+
     );
   }
 
@@ -154,15 +166,15 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   // ============================================================
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Expanded(
             child: Container(
-              height: 42,
+              height: 40,
               decoration: BoxDecoration(
                 color: const Color(0xFF2C2C2E),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppSpacing.xs4),
               ),
               child: TextField(
                 controller: _searchController,
@@ -171,30 +183,36 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 decoration: const InputDecoration(
                   hintText: 'Search',
                   hintStyle: TextStyle(color: Colors.grey),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey, size: 24,),
                   border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  isDense: true,
+                  isCollapsed: true,
                 ),
               ),
             ),
           ),
           const SizedBox(width: 10),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text(
-              'NEW',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4DA3FF),
-              foregroundColor: Colors.white,
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          SizedBox(
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.add, size: 18),
+              label: SetupTextWidget(titleLabel: "NEW",
+                font: FontApp.robotoMedium,
+                textColor: Colors.black,),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4DA3FF),
+                foregroundColor: Colors.black,
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.xs4),
+                ),
               ),
             ),
-          ),
+          )
+
         ],
       ),
     );
@@ -202,9 +220,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   // ============================================================
   // TAB BAR — FIX CHÍNH:
-  // Dùng Column > Container thay vì double.infinity trong Row
-  // để tránh lỗi "RenderBox was not laid out"
-  // ============================================================
   Widget _buildTabBar() {
     return Column(
       children: [
@@ -308,7 +323,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildThumbnail(project),
           const SizedBox(width: 14),
@@ -375,14 +390,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Widget _buildInfoRow(String text) {
     return Padding(
       padding: const EdgeInsets.only(top: 2),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color(0xFF8E8E93),
-          fontSize: 12.5,
-          height: 1.4,
-        ),
-      ),
+      child: SetupTextWidget(titleLabel: text, font: FontApp.robotoRegular,
+        fontSize: 12, textColor: ColorApp.whiteMainColor.withAlpha(700),)
     );
   }
 
@@ -405,13 +414,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  Widget _buildChatFAB() {
-    return FloatingActionButton(
-      onPressed: () {},
-      backgroundColor: const Color(0xFF4DA3FF),
-      child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-    );
-  }
+  // Widget _buildChatFAB() {
+  //   return FloatingActionButton(
+  //     onPressed: () {},
+  //     backgroundColor: const Color(0xFF4DA3FF),
+  //     child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+  //   );
+  // }
 
   void _showProjectOptions(Project project) {
     showModalBottomSheet(
