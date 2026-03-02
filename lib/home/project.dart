@@ -3,6 +3,7 @@ import 'package:flutter_popup/flutter_popup.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/extension/setup_widget.dart';
+import 'package:matisse/home/left_menu.dart';
 
 // ============================================================
 // MODEL: Dữ liệu dự án
@@ -89,6 +90,7 @@ class ProjectsScreen extends StatefulWidget {
 }
 
 class _ProjectsScreenState extends State<ProjectsScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedTab = 0;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -109,6 +111,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: const MatisseDrawer(),
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: _buildAppBar(),
       body: Column(
@@ -132,7 +136,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.menu, color: Colors.white),
-        onPressed: () {},
+        onPressed: () {
+          _scaffoldKey.currentState?.openDrawer();
+        },
       ),
       title: const Text(
         'Projects',
