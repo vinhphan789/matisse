@@ -15,12 +15,11 @@ class MatisseDrawer extends StatefulWidget {
 }
 
 class _MatisseDrawerState extends State<MatisseDrawer> {
-  bool _projectsExpanded = true;
+  bool _projectsExpanded = false;
   bool _recipeExpanded = false;
   bool _stainingExpanded = false;
 
   static const Color _bgColor = Color(0xFF2C2C2C);
-  static const Color _textColor = Colors.white;
   static const Color _subTextColor = Color(0xFFCCCCCC);
   static const Color _dividerColor = Color(0xFF444444);
   static const Color _iconColor = Color(0xFF999999);
@@ -104,13 +103,18 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
             const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             child: Row(
               children: [
-                Icon(Icons.folder_outlined, color: _iconColor, size: 20),
+                Image.asset(ImageApp.fileMenuIcon, width: 20, height: 20,),
                 const SizedBox(width: 12),
                 Expanded(
                   child: SetupTextWidget(titleLabel: "Projects",
                       font: FontApp.robotoMedium,
                       fontSize: 16,
-                      textColor: Colors.white))
+                      textColor: Colors.white)),
+                AnimatedRotation(
+                    turns: _projectsExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 250),
+                  child: Icon(Icons.keyboard_arrow_down, color: _iconColor, size: 20,)
+                )
                   ],
                 ),
           ),
