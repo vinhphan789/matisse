@@ -5,6 +5,8 @@ import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/home/left_menu.dart';
 
+import 'avata_popup.dart';
+
 // ============================================================
 // MODEL: Dữ liệu dự án
 // ============================================================
@@ -151,18 +153,19 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16),
-          child: CircleAvatar(
-            radius: 17,
-            backgroundColor: const Color(0xFFCE93D8),
-            child: const Text(
-              'MA',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+          child: AvatarPopupButton(
+              userName: 'Marat',
+              userEmail: 'marat@matisse.ai',
+              avatarInitials: 'MA',
+              avatarColor: ColorApp.bruBackgroundCE93D8,
+              onMyProjects: () { /* navigate */ },
+              onMyProfile:  () { /* navigate */ },
+              onWebshop:    () { /* navigate */ },
+              onLanguage:   () { /* navigate */ },
+              onUserGuide:  () { /* navigate */ },
+              onLogout:     () { /* handle logout */ },
             ),
-          ),
+
         ),
       ],
     );
@@ -375,7 +378,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       height: 60,
       decoration: BoxDecoration(
         color: const Color(0xFF3A3A3C),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppSpacing.xs4),
       ),
       child: project.thumbnailUrl != null
           ? const Icon(Icons.image, color: Colors.grey, size: 30)
@@ -410,23 +413,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  // Widget _buildChatFAB() {
-  //   return FloatingActionButton(
-  //     onPressed: () {},
-  //     backgroundColor: const Color(0xFF4DA3FF),
-  //     child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-  //   );
-  // }
-
   Widget _buildPopupMenu(Project project) {
     return CustomPopup(
-      arrowColor: const Color(0xFF2C2C2E),
-      backgroundColor: const Color(0xFF2C2C2E),
+      arrowColor: ColorApp.greyBackground2C2C2E,
+      backgroundColor: ColorApp.greyBackground2C2C2E,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPopupItem('Share', onTap: () {}),
+          _buildPopupItem('Share', onTap: () {
+            print("Share");
+          }),
           _buildPopupItem('Duplicate', onTap: () {}),
           _buildPopupItem('Manage', onTap: () {}),
           _buildPopupItem('Delete', onTap: () {}, isDestructive: true),
@@ -458,23 +455,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         ),
       ),
     );
-  }
-
-  void _handleMenuAction(String action, Project project) {
-    switch (action) {
-      case 'share':
-      // TODO: xử lý share
-        break;
-      case 'duplicate':
-      // TODO: xử lý duplicate
-        break;
-      case 'manage':
-      // TODO: xử lý manage
-        break;
-      case 'delete':
-      // TODO: xử lý delete
-        break;
-    }
   }
 
   String _formatDate(DateTime dt) {
