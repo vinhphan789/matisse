@@ -50,8 +50,11 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
               isExpanded: _recipeExpanded,
               onTap: () => setState(() => _recipeExpanded = !_recipeExpanded),
               children: [
-                _buildSubItem('Browse Recipes', onTap: () {}),
-                _buildSubItem('My Recipes', onTap: () {}),
+                _buildSubItem('Aesthetic Model', onTap: () {}),
+                _buildSubItem('Framework', onTap: () {}),
+                _buildSubItem('Dentin', onTap: () {}),
+                _buildSubItem('Enamel', onTap: () {}),
+                _buildSubItem('ShadeGuide AI', onTap: () {}),
               ], assetPath: ImageApp.recipeIcon,
             ),
 
@@ -64,8 +67,8 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
               onTap: () =>
                   setState(() => _stainingExpanded = !_stainingExpanded),
               children: [
-                _buildSubItem('New Session', onTap: () {}),
-                _buildSubItem('History', onTap: () {}),
+                _buildSubItem('Monolithic/ Color Corrections', onTap: () {}),
+                _buildSubItem('ColorModel/ Stump Shade', onTap: () {}),
               ], assetPath: ImageApp.stainingIcon,
             ),
 
@@ -83,6 +86,7 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
                 ),
               ),
             ),
+            Expanded(child: Spacer())
           ],
         ),
       ),
@@ -193,8 +197,13 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
       child: Padding(
         padding: const EdgeInsets.only(
             left: 52, right: 20, top: 13, bottom: 13),
-        child: SetupTextWidget(titleLabel: title,
-          font: FontApp.robotoMedium, fontSize: 14, textColor: Colors.white,)
+        child: SizedBox(
+          width: double.infinity,
+          child: SetupTextWidget(titleLabel: title,
+            font: FontApp.robotoMedium, fontSize: 14,
+            textColor: Colors.white,
+            textAlign: TextAlign.left,),
+        )
       ),
     );
   }
@@ -248,25 +257,6 @@ class MatisseMainScreen extends StatelessWidget {
             child: Text('MA',
                 style: TextStyle(color: Colors.white, fontSize: 12)),
           ),
-          const SizedBox(width: 10),
-          // NEW button
-          Padding(
-            padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
-            child: ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.add, size: 16, color: Colors.white),
-              label: const Text('NEW',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A90D9),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6)),
-                padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
-              ),
-            ),
-          ),
         ],
       ),
       // ── Attach the drawer here ──
@@ -274,7 +264,7 @@ class MatisseMainScreen extends StatelessWidget {
       body: const Center(
         child: Text(
           'Press ☰ to open drawer',
-          style: TextStyle(color: Colors.white54, fontSize: 16),
+          style: TextStyle(color: Colors.white, fontSize: 16),
         ),
       ),
     );
