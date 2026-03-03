@@ -75,16 +75,15 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
 
             _buildDivider(),
 
-            const Spacer(),
+            SizedBox(height: 10,),
 
             // ── Version ──
             Padding(
               padding: const EdgeInsets.only(bottom: 20),
               child: Center(
-                child: Text(
-                  'Version 2.3(7)',
-                  style: TextStyle(color: _iconColor, fontSize: 12),
-                ),
+                child: SetupTextWidget(titleLabel: 'Version 2.3(7)',
+                    font: FontApp.robotoRegular,
+                    fontSize: 12, textColor: Colors.white)
               ),
             ),
             Expanded(child: Spacer())
