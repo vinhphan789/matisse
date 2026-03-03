@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/images/image_app.dart';
 
 // ─────────────────────────────────────────────
@@ -46,21 +47,19 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
 
             // ── Get Recipe ──
             _buildExpandableSection(
-              icon: Icons.science_outlined,
               title: 'Get Recipe',
               isExpanded: _recipeExpanded,
               onTap: () => setState(() => _recipeExpanded = !_recipeExpanded),
               children: [
                 _buildSubItem('Browse Recipes', onTap: () {}),
                 _buildSubItem('My Recipes', onTap: () {}),
-              ],
+              ], assetPath: ImageApp.recipeIcon,
             ),
 
             _buildDivider(),
 
             // ── Staining Studio ──
             _buildExpandableSection(
-              icon: Icons.edit_outlined,
               title: 'Staining Studio',
               isExpanded: _stainingExpanded,
               onTap: () =>
@@ -68,7 +67,7 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
               children: [
                 _buildSubItem('New Session', onTap: () {}),
                 _buildSubItem('History', onTap: () {}),
-              ],
+              ], assetPath: ImageApp.stainingIcon,
             ),
 
             _buildDivider(),
@@ -108,23 +107,12 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
                 Icon(Icons.folder_outlined, color: _iconColor, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    'Projects',
-                    style: TextStyle(
-                      color: _textColor,
+                  child: SetupTextWidget(titleLabel: "Projects",
+                      font: FontApp.robotoMedium,
                       fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
+                      textColor: Colors.white))
+                  ],
                 ),
-                AnimatedRotation(
-                  turns: _projectsExpanded ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 250),
-                  child: Icon(Icons.keyboard_arrow_down,
-                      color: _iconColor, size: 20),
-                ),
-              ],
-            ),
           ),
         ),
         AnimatedCrossFade(
@@ -148,7 +136,7 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
 
   // ── Generic expandable section ──
   Widget _buildExpandableSection({
-    required IconData icon,
+    required String assetPath,
     required String title,
     required bool isExpanded,
     required VoidCallback onTap,
@@ -165,17 +153,11 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
             const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             child: Row(
               children: [
-                Icon(icon, color: _iconColor, size: 20),
+                Image.asset(assetPath, width: 20, height: 20,),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: _textColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
+                  child: SetupTextWidget(titleLabel: title,
+                    font: FontApp.robotoMedium, fontSize: 16, textColor: Colors.white,)
                 ),
                 AnimatedRotation(
                   turns: isExpanded ? 0.5 : 0,
@@ -207,14 +189,8 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
       child: Padding(
         padding: const EdgeInsets.only(
             left: 52, right: 20, top: 13, bottom: 13),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: _subTextColor,
-            fontSize: 15,
-            fontWeight: FontWeight.w300,
-          ),
-        ),
+        child: SetupTextWidget(titleLabel: title,
+          font: FontApp.robotoMedium, fontSize: 14, textColor: Colors.white,)
       ),
     );
   }
