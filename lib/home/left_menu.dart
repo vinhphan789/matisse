@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/images/image_app.dart';
 
@@ -107,7 +108,7 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
             const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             child: Row(
               children: [
-                Image.asset(ImageApp.fileMenuIcon, width: 20, height: 20,),
+                Image.asset(ImageApp.fileMenuIcon, width: 20, height: 20, color: Colors.grey,),
                 const SizedBox(width: 12),
                 Expanded(
                   child: SetupTextWidget(titleLabel: "Projects",
@@ -212,72 +213,3 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
       Divider(color: _dividerColor, height: 1, thickness: 1);
 }
 
-
-class _Dot extends StatelessWidget {
-  final Color color;
-  final double size;
-  const _Dot({required this.color, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// EXAMPLE MAIN SCREEN (for reference / testing)
-// ─────────────────────────────────────────────
-
-class MatisseMainScreen extends StatelessWidget {
-  const MatisseMainScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E1E1E),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF252525),
-        elevation: 0,
-        // ── Hamburger button ──
-        leading: Builder(
-          builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-          ),
-        ),
-        actions: [
-          // Avatar
-          const CircleAvatar(
-            radius: 17,
-            backgroundColor: Color(0xFF7B68EE),
-            child: Text('MA',
-                style: TextStyle(color: Colors.white, fontSize: 12)),
-          ),
-        ],
-      ),
-      // ── Attach the drawer here ──
-      drawer: const MatisseDrawer(),
-      body: const Center(
-        child: Text(
-          'Press ☰ to open drawer',
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Entry point (remove if you integrate into existing app)
-// ─────────────────────────────────────────────
-
-void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: MatisseMainScreen(),
-  ));
-}
