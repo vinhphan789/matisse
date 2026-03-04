@@ -32,12 +32,7 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
   final _dentistFocusNode = FocusNode();
   bool _dentistFocused = false;
 
-  static const _bgColor = Color(0xFF1C1C1E);
-  static const _surfaceColor = Color(0xFF2C2C2E);
-  static const _borderColor = Color(0xFF3A3A3C);
-  static const _hintColor = Color(0xFF636366);
   static const _textColor = Color(0xFFFFFFFF);
-  static const _accentColor = Color(0xFF4A90D9);
 
   @override
   void initState() {
@@ -54,25 +49,6 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
     _dentistFocusNode.dispose();
     _descriptionController.dispose();
     super.dispose();
-  }
-
-  void _submit() {
-    final name = _patientNameController.text.trim();
-    final dentist = _dentistController.text.trim();
-    final desc = _descriptionController.text.trim();
-
-    if (name.isEmpty) {
-      _showError('Vui lòng nhập tên bệnh nhân.');
-      return;
-    }
-    if (dentist.isEmpty) {
-      _showError('Vui lòng nhập tên nha sĩ.');
-      return;
-    }
-
-    // TODO: xử lý tạo project tại đây
-    debugPrint('Create project: name=$name, dentist=$dentist, desc=$desc');
-    Navigator.of(context).pop();
   }
 
   void _showError(String msg) {
@@ -138,7 +114,7 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
               _dentistFocused
                   ? Icons.keyboard_arrow_up
                   : Icons.keyboard_arrow_down,
-              color: Colors.white,
+              color: ColorApp.whiteMainColor.withAlpha(77),
             ),
           ),
           const SizedBox(height: 20),
@@ -156,7 +132,7 @@ class _CreateProjectSheetState extends State<CreateProjectSheet> {
           SizedBox(
             height: 42,
             child: ElevatedButton(
-              onPressed: _submit,
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorApp.grayBorder525252Color,
                 foregroundColor: _textColor,
