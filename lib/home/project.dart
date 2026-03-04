@@ -6,6 +6,7 @@ import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/home/left_menu.dart';
 
 import 'avata_popup.dart';
+import 'create_new_project.dart';
 
 // ============================================================
 // MODEL: Dữ liệu dự án
@@ -115,7 +116,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: const MatisseDrawer(),
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: ColorApp.blackMain1E1E1E,
       appBar: _buildAppBar(),
       body: Column(
         children: [
@@ -206,7 +207,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           SizedBox(
             height: 40,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () => showCreateProjectSheet(context),
               icon: const Icon(Icons.add, size: 18),
               label: SetupTextWidget(titleLabel: "NEW",
                 font: FontApp.robotoMedium,
@@ -260,7 +261,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isSelected
-                    ? const Color(0xFF4DA3FF)
+                    ? ColorApp.blueMainColor
                     : Colors.white.withAlpha(90),
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -273,7 +274,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             height: 2,
             // width tự co theo Expanded, KHÔNG dùng double.infinity trong Row
             color: isSelected
-                ? const Color(0xFF4DA3FF)
+                ? ColorApp.blueMainColor
                 : Colors.transparent,
           ),
         ],

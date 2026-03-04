@@ -11,5 +11,6 @@ class ColorApp {
   static const Color grayBackground90CAF9Color = Color(0xFF2E2E2E);
   static const Color bruBackgroundCE93D8 = Color(0xFFCE93D8);
   static const Color greyBackground2C2C2E = Color(0xFF2C2C2E);
-
+  static const Color greyLine5E5E5E = Color(0xFF5E5E5E);
+  static const Color greyBgr808080 = Color(0xFF808080);
 }
