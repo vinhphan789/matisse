@@ -10,11 +10,25 @@ import '../colors/colors_app.dart';
 import 'package:flutter/services.dart';
 
 import '../extension/loading.dart';
-final GlobalKey<NavigatorState> navigatorKey =
-GlobalKey<NavigatorState>();
+import '../next_work/app_service.dart';
+import '../view_model/project_view_model.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
-  runApp(const MyApp());
+  // Gắn token cứng để test — sau này thay bằng token từ login
+  ApiService().saveCredentials(
+    session: 'd91b2a46-26be-4b38-8440-3d6c9caea868',
+    token:
+        'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik16WTFNamcxUlRNek5VTkRRamcxTVRFMFJEZ3lRMEUzT0RCQlFVWkVSRU5EUlRNMk1Ua3dSZyJ9.eyJuaWNrbmFtZSI6Im1hcmF0IiwibmFtZSI6Im1hcmF0QG1hdGlzc2UuYWkiLCJwaWN0dXJlIjoiaHR0cHM6Ly9zLmdyYXZhdGFyLmNvbS9hdmF0YXIvMmIwMTJhMmExZTE2ZGM1ZWY3NDc0MmVkZGZjODNkMTg_cz00ODAmcj1wZyZkPWh0dHBzJTNBJTJGJTJGY2RuLmF1dGgwLmNvbSUyRmF2YXRhcnMlMkZtYS5wbmciLCJ1cGRhdGVkX2F0IjoiMjAyNi0wMy0wOVQwNzozMDozNS4wMTdaIiwiZW1haWwiOiJtYXJhdEBtYXRpc3NlLmFpIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImlzcyI6Imh0dHBzOi8vZGV2LXBpZTU5cHl1LmV1LmF1dGgwLmNvbS8iLCJhdWQiOiJoVXVhRlg5TUw2cVJVakdUMlBDQUkwbFVIWVNLTGJQNyIsInN1YiI6ImF1dGgwfDYxYmIxYTNhMzIyMjU0MDA2OTY1NTAzZiIsImlhdCI6MTc3MzA0MTQzNSwiZXhwIjoxNzczMDc3NDM1fQ.L66ZgSAJ3436KPJzqcKTCMDDxmhNl_lhPK7HA887WthVRIbc9Zstc-n-cn2EJgeWgQJokHiXzxYOAotXcuNCwihBwoxrO91PkrLxIm46pjBTv04Yuxs99H6sAvoUQ2R1vRvXaAg01qhbDuU-MbBcEgpGd_OtL0nJ8bOZTsAZDaV0jIkCtadX6dfoigKR8hayWoNAEtpaN_xoJg9DqaXNyRahvkv9JOZ_iKg0TrUfpMoI_6_vdzY5CZ8p0aQQNXlGDY5od1xcvH2HJoRpjdiuvuGmuuKI5TQW-BnbaqFHZ4gwDciYVm_0V0zQ0dnY6XQtCxahre-iOCcwEOYV6REy2w',
+  );
+
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => ProjectViewModel())],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -58,9 +72,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.white,           // 🎨 Màu nền status bar là trắng
-        statusBarIconBrightness: Brightness.light, // 🔷 Icon màu tối (để nhìn rõ trên nền trắng)
-        statusBarBrightness: Brightness.dark,    // 🍎 Cho iOS
+        statusBarColor: Colors.white,
+        // 🎨 Màu nền status bar là trắng
+        statusBarIconBrightness: Brightness.light,
+        // 🔷 Icon màu tối (để nhìn rõ trên nền trắng)
+        statusBarBrightness: Brightness.dark, // 🍎 Cho iOS
       ),
       child: Scaffold(
         body: Container(
@@ -76,16 +92,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     alignment: Alignment.topRight,
                     child: IconButton(
                       onPressed: () async {
-                        final result = await Navigator.push(context, CupertinoPageRoute(builder: (_) => LanguagePage(
-                          selected: selected,
-                        )));
-                       if (result != null) {
-                         setState(() {
-                           selected = result; // ✅ wrap trong setState
-                         });
-                       }
+                        final result = await Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                            builder: (_) => LanguagePage(selected: selected),
+                          ),
+                        );
+                        if (result != null) {
+                          setState(() {
+                            selected = result; // ✅ wrap trong setState
+                          });
+                        }
                       },
-                      icon: Image.asset(ImageApp.languageIcon, width: 24, height: 24,),
+                      icon: Image.asset(
+                        ImageApp.languageIcon,
+                        width: 24,
+                        height: 24,
+                      ),
                     ),
                   ),
                   Container(
@@ -124,7 +147,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(context, CupertinoPageRoute(builder: (_) => const SignInPage()));
+                          Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                              builder: (_) => const SignInPage(),
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF9DD7FF),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:matisse/api_endpoint/api_endpoint.dart';
 import 'package:matisse/extension/loading.dart';
 
-import '../model/model.dart';
+import '../model/language_model.dart';
 import '../next_work/app_service.dart';
 
 

@@ -1,90 +1,16 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_popup/flutter_popup.dart';
 import 'package:matisse/colors/colors_app.dart';
-import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/home/left_menu.dart';
 
+import '../extension/app_router.dart';
+import '../model/project_model.dart';       // 👈 ProjectModel từ API
+import '../view_model/project_view_model.dart';
 import 'avata_popup.dart';
 import 'create_new_project.dart';
 
-// ============================================================
-// MODEL: Dữ liệu dự án
-// ============================================================
-class Project {
-  final String id;
-  final String name;
-  final DateTime createdAt;
-  final String? dentistName;
-  final List<String> sharedWith;
-  final DateTime lastModifiedAt;
-  final String modifiedBy;
-  final String status;
-  final String? thumbnailUrl;
-
-  const Project({
-    required this.id,
-    required this.name,
-    required this.createdAt,
-    this.dentistName,
-    this.sharedWith = const [],
-    required this.lastModifiedAt,
-    required this.modifiedBy,
-    this.status = 'Active',
-    this.thumbnailUrl,
-  });
-}
-
-// ============================================================
-// SAMPLE DATA: Dữ liệu mẫu
-// ============================================================
-final List<Project> sampleProjects = [
-  Project(
-    id: '1',
-    name: 'UNNAMED 1',
-    createdAt: DateTime(2026, 2, 21, 0, 27),
-    lastModifiedAt: DateTime(2026, 2, 21, 0, 27),
-    modifiedBy: 'Marat',
-  ),
-  Project(
-    id: '2',
-    name: 'Alp',
-    createdAt: DateTime(2026, 2, 12, 22, 40),
-    lastModifiedAt: DateTime(2026, 2, 12, 22, 40),
-    modifiedBy: 'Marat',
-    thumbnailUrl: 'tooth_alp',
-  ),
-  Project(
-    id: '3',
-    name: 'Warrens case',
-    createdAt: DateTime(2026, 2, 7, 5, 9),
-    lastModifiedAt: DateTime(2026, 2, 7, 5, 9),
-    modifiedBy: 'Marat',
-    thumbnailUrl: 'tooth_warren',
-  ),
-  Project(
-    id: '4',
-    name: 'Dani copy (4)',
-    createdAt: DateTime(2026, 1, 29, 10, 49),
-    sharedWith: ['An Phan', 'Chung'],
-    lastModifiedAt: DateTime(2026, 2, 3, 17, 17),
-    modifiedBy: 'Marat',
-    thumbnailUrl: 'tooth_dani',
-  ),
-  Project(
-    id: '5',
-    name: 'Dani copy (4)',
-    createdAt: DateTime(2026, 1, 29, 10, 49),
-    sharedWith: ['An Phan', 'Chung'],
-    lastModifiedAt: DateTime(2026, 2, 3, 17, 17),
-    modifiedBy: 'Marat',
-    thumbnailUrl: 'tooth_dani',
-  ),
-];
-
-// ============================================================
-// MAIN SCREEN
-// ============================================================
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
 
@@ -95,38 +21,96 @@ class ProjectsScreen extends StatefulWidget {
 class _ProjectsScreenState extends State<ProjectsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedTab = 0;
+
+  // ViewModel — KHÔNG dùng Provider vì bạn đang dùng AnimatedBuilder
+  final ProjectViewModel vm = ProjectViewModel();
+
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController(); // 👈 Để detect scroll cuối list
+
+  // Search query — dùng để gọi API search, không filter local nữa
   String _searchQuery = '';
+
+  // Debounce timer để không gọi API liên tục khi user đang gõ
+  // Giống debounce bên iOS
+  DateTime? _lastSearchTime;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Gọi API lần đầu sau khi widget build xong
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      vm.fetchProjects();
+    });
+
+    // Lắng nghe scroll — khi gần cuối list thì load more
+    _scrollController.addListener(() {
+      final position = _scrollController.position;
+      final isNearBottom = position.pixels >= position.maxScrollExtent - 200;
+      if (isNearBottom) {
+        // Truyền search query + tab hiện tại vào loadMore
+        vm.loadMore(
+          search: _searchQuery,
+          shared: _selectedTab == 1, // Tab 0 = MY PROJECTS, Tab 1 = SHARED
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  List<Project> get _filteredProjects {
-    if (_searchQuery.isEmpty) return sampleProjects;
-    return sampleProjects
-        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
+  // Khi user đổi tab — fetch lại với param shared tương ứng
+  void _onTabChanged(int index) {
+    setState(() => _selectedTab = index);
+    vm.fetchProjects(
+      search: _searchQuery,
+      shared: index == 1, // Tab 1 = SHARED
+    );
+  }
+
+  // Khi user gõ search — gọi API sau 500ms (debounce)
+  void _onSearchChanged(String value) {
+    setState(() => _searchQuery = value);
+    _lastSearchTime = DateTime.now();
+    final capturedTime = _lastSearchTime;
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      // Chỉ gọi API nếu user không gõ thêm trong 500ms
+      if (capturedTime == _lastSearchTime) {
+        vm.fetchProjects(
+          search: value,
+          shared: _selectedTab == 1,
+        );
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const MatisseDrawer(),
-      backgroundColor: ColorApp.blackMain1E1E1E,
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          _buildTabBar(),   // <-- đã fix
-          _buildSortLabel(),
-          Expanded(child: _buildProjectList()),
-        ],
-      ),
-
+    return AnimatedBuilder(
+      animation: vm,
+      builder: (context, _) {
+        return Scaffold(
+          key: _scaffoldKey,
+          drawer: const MatisseDrawer(),
+          backgroundColor: ColorApp.blackMain1E1E1E,
+          appBar: _buildAppBar(),
+          body: Column(
+            children: [
+              _buildSearchBar(),
+              _buildTabBar(),
+              _buildSortLabel(),
+              Expanded(child: _buildProjectList()),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -139,13 +123,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.menu, color: Colors.white),
-        onPressed: () {
-          _scaffoldKey.currentState?.openDrawer();
-        },
+        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
       ),
-      title: const Text(
-        'Projects',
-        style: TextStyle(
+      title: Text(
+        // Hiển thị tổng số project trên title
+        vm.totalCount > 0 ? 'Projects (${vm.totalCount})' : 'Projects',
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 24,
           fontWeight: FontWeight.w500,
@@ -155,18 +138,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: AvatarPopupButton(
-              userName: 'Marat',
-              userEmail: 'marat@matisse.ai',
-              avatarInitials: 'MA',
-              avatarColor: ColorApp.bruBackgroundCE93D8,
-              onMyProjects: () { /* navigate */ },
-              onMyProfile:  () { /* navigate */ },
-              onWebshop:    () { /* navigate */ },
-              onLanguage:   () { /* navigate */ },
-              onUserGuide:  () { /* navigate */ },
-              onLogout:     () { /* handle logout */ },
-            ),
-
+            userName: 'Marat',
+            userEmail: 'marat@matisse.ai',
+            avatarInitials: 'MA',
+            avatarColor: ColorApp.bruBackgroundCE93D8,
+            onMyProjects: () {},
+            onMyProfile: () {},
+            onWebshop: () {},
+            onLanguage: () {},
+            onUserGuide: () {},
+            onLogout: () {},
+          ),
         ),
       ],
     );
@@ -189,12 +171,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               child: TextField(
                 controller: _searchController,
-                onChanged: (val) => setState(() => _searchQuery = val),
+                onChanged: _onSearchChanged, // 👈 Gọi API search thay vì filter local
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Search',
                   hintStyle: TextStyle(color: Colors.grey),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey, size: 24,),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey, size: 24),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(vertical: 8),
                   isDense: true,
@@ -209,49 +191,47 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             child: ElevatedButton.icon(
               onPressed: () => showCreateProjectSheet(context),
               icon: const Icon(Icons.add, size: 18),
-              label: SetupTextWidget(titleLabel: "NEW",
+              label: SetupTextWidget(
+                titleLabel: "NEW",
                 font: FontApp.robotoMedium,
-                textColor: Colors.black,),
+                textColor: Colors.black,
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorApp.blueMainColor,
                 foregroundColor: Colors.black,
-                padding:
-                const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.xs4),
                 ),
               ),
             ),
-          )
-
+          ),
         ],
       ),
     );
   }
 
   // ============================================================
-  // TAB BAR — FIX CHÍNH:
+  // TAB BAR
+  // ============================================================
   Widget _buildTabBar() {
     return Column(
       children: [
-        // Hàng chứa 2 tab, mỗi tab chiếm 50% chiều rộng
         Row(
           children: [
             Expanded(child: _buildTab('MY PROJECTS', 0)),
             Expanded(child: _buildTab('SHARED', 1)),
           ],
         ),
-        // Đường kẻ xám nền phía dưới toàn bộ tab bar
         Container(height: 1, color: const Color(0xFF3A3A3C)),
       ],
     );
   }
 
-  /// Mỗi tab: text + gạch chân (chỉ hiện khi selected)
   Widget _buildTab(String label, int index) {
     final isSelected = _selectedTab == index;
     return GestureDetector(
-      onTap: () => setState(() => _selectedTab = index),
+      onTap: () => _onTabChanged(index), // 👈 Gọi API khi đổi tab
       child: Column(
         children: [
           Padding(
@@ -260,22 +240,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isSelected
-                    ? ColorApp.blueMainColor
-                    : Colors.white.withAlpha(90),
+                color: isSelected ? ColorApp.blueMainColor : Colors.white.withAlpha(90),
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
             ),
           ),
-          // Gạch chân — dùng AnimatedContainer để có hiệu ứng mượt
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             height: 2,
-            // width tự co theo Expanded, KHÔNG dùng double.infinity trong Row
-            color: isSelected
-                ? ColorApp.blueMainColor
-                : Colors.transparent,
+            color: isSelected ? ColorApp.blueMainColor : Colors.transparent,
           ),
         ],
       ),
@@ -309,28 +283,76 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   // PROJECT LIST
   // ============================================================
   Widget _buildProjectList() {
-    final projects = _filteredProjects;
-    if (projects.isEmpty) {
+
+    // --- State 1: Loading lần đầu ---
+    if (vm.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // --- State 2: Có lỗi và chưa có data ---
+    if (vm.errorMessage != null && vm.projects.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              vm.errorMessage!,
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => vm.fetchProjects(shared: _selectedTab == 1),
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // --- State 3: Không có data ---
+    if (vm.hasFetched && vm.projects.isEmpty && vm.errorMessage == null) {
       return const Center(
         child: Text('No projects found', style: TextStyle(color: Colors.grey)),
       );
     }
-    return ListView.separated(
-      itemCount: projects.length,
-      separatorBuilder: (_, __) => const Divider(
-        color: Color(0xFF3A3A3C),
-        height: 1,
-        indent: 16,
-        endIndent: 16,
+
+    // --- State 4: Có data ---
+    // --- State 4: Có data ---
+    return RefreshIndicator(
+      color: ColorApp.blueMainColor, // 👈 Màu spinner kéo xuống
+      onRefresh: () async {
+        // Fetch lại từ đầu — giống pull to refresh bên iOS
+        await vm.refreshProjects(
+          search: _searchQuery,
+          shared: _selectedTab == 1,
+        );
+      },
+      child: ListView.separated(
+        controller: _scrollController,
+        itemCount: vm.projects.length + (vm.isLoadingMore ? 1 : 0),
+        separatorBuilder: (_, __) => const Divider(
+          color: Color(0xFF3A3A3C),
+          height: 1,
+          indent: 16,
+          endIndent: 16,
+        ),
+        itemBuilder: (context, index) {
+          if (index == vm.projects.length) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return _buildProjectCard(vm.projects[index]);
+        },
       ),
-      itemBuilder: (context, index) => _buildProjectCard(projects[index]),
     );
   }
 
   // ============================================================
-  // PROJECT CARD
+  // PROJECT CARD — dùng ProjectModel thay vì Project sample
   // ============================================================
-  Widget _buildProjectCard(Project project) {
+  Widget _buildProjectCard(ProjectModel project) { // 👈 ProjectModel thay vì Project
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -351,13 +373,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                _buildInfoRow('Created at: ${_formatDate(project.createdAt)}'),
-                _buildInfoRow('Dentist name: ${project.dentistName ?? 'N/A'}'),
+                _buildInfoRow('Created at: ${_formatDate(project.createdTs)}'),
+                _buildInfoRow('Dentist name: ${project.dentist ?? 'N/A'}'),
                 _buildInfoRow(
-                  'Shared with: ${project.sharedWith.isEmpty ? 'N/A' : project.sharedWith.join(', ')}',
-                ),
-                _buildInfoRow(
-                  'Last modified at: ${_formatDate(project.lastModifiedAt)}\n(${project.modifiedBy})',
+                  'Last modified at: ${_formatDate(project.updatedTs)}\n(${project.updatedBy})',
                 ),
                 const SizedBox(height: 8),
                 _buildStatusBadge(project.status),
@@ -373,30 +392,42 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   // ============================================================
   // THUMBNAIL
   // ============================================================
-  Widget _buildThumbnail(Project project) {
+  Widget _buildThumbnail(ProjectModel project) {
     return Container(
       width: 60,
       height: 60,
       decoration: BoxDecoration(
         color: const Color(0xFF3A3A3C),
         borderRadius: BorderRadius.circular(AppSpacing.xs4),
+        // Hiển thị ảnh nếu có
+        image: project.image != null && project.image!.imageUrl.isNotEmpty
+            ? DecorationImage(
+          image: NetworkImage(project.image!.imageUrl),
+          fit: BoxFit.cover,
+        )
+            : null,
       ),
-      child: project.thumbnailUrl != null
-          ? const Icon(Icons.image, color: Colors.grey, size: 30)
-          : const Icon(Icons.folder, color: Colors.grey, size: 30),
+      // Hiển thị icon placeholder nếu không có ảnh
+      child: project.image == null
+          ? const Icon(Icons.folder, color: Colors.grey, size: 30)
+          : null,
     );
   }
 
   Widget _buildInfoRow(String text) {
     return Padding(
       padding: const EdgeInsets.only(top: 2),
-      child: SetupTextWidget(titleLabel: text, font: FontApp.robotoRegular,
-        fontSize: 12, textColor: ColorApp.whiteMainColor.withAlpha(700),)
+      child: SetupTextWidget(
+        titleLabel: text,
+        font: FontApp.robotoRegular,
+        fontSize: 12,
+        textColor: ColorApp.whiteMainColor.withAlpha(700),
+      ),
     );
   }
 
   Widget _buildStatusBadge(String status) {
-    final Color badgeColor = status == 'Active' ? Colors.green : Colors.grey;
+    final Color badgeColor = status == 'active' ? Colors.green : Colors.grey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
       decoration: BoxDecoration(
@@ -414,7 +445,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  Widget _buildPopupMenu(Project project) {
+  Widget _buildPopupMenu(ProjectModel project) {
     return CustomPopup(
       arrowColor: ColorApp.greyBackground2C2C2E,
       backgroundColor: ColorApp.greyBackground2C2C2E,
@@ -422,9 +453,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPopupItem('Share', onTap: () {
-            print("Share");
-          }),
+          _buildPopupItem('Share', onTap: () {}),
           _buildPopupItem('Duplicate', onTap: () {}),
           _buildPopupItem('Manage', onTap: () {}),
           _buildPopupItem('Delete', onTap: () {}, isDestructive: true),
@@ -442,7 +471,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  Widget _buildPopupItem(String label, {required VoidCallback onTap, bool isDestructive = false}) {
+  Widget _buildPopupItem(String label,
+      {required VoidCallback onTap, bool isDestructive = false}) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -458,22 +488,21 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  String _formatDate(DateTime dt) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    final hour =
-    dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
-    final min = dt.minute.toString().padLeft(2, '0');
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year} at $hour:$min $period';
+  // Parse date string từ API -> DateTime -> format đẹp
+  // API trả về: "2026-03-02T10:17:04.407554Z"
+  String _formatDate(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr).toLocal(); // 👈 Convert về local timezone
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      final min = dt.minute.toString().padLeft(2, '0');
+      return '${months[dt.month - 1]} ${dt.day}, ${dt.year} at $hour:$min $period';
+    } catch (_) {
+      return dateStr; // Nếu parse lỗi thì trả về string gốc
+    }
   }
-}
-
-void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: ProjectsScreen(),
-  ));
 }
