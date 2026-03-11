@@ -7,6 +7,7 @@ import 'package:matisse/home/left_menu.dart';
 
 import '../extension/app_router.dart';
 import '../login/main.dart';
+import '../login/profile.dart';
 import '../model/project_model.dart';       // 👈 ProjectModel từ API
 import '../popup/logout_popup.dart';
 import '../view_model/project_view_model.dart';
@@ -145,7 +146,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             avatarInitials: 'MA',
             avatarColor: ColorApp.bruBackgroundCE93D8,
             onMyProjects: () {},
-            onMyProfile: () {},
+            onMyProfile: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyProfileScreen()),
+              );
+            },
             onWebshop: () {},
             onLanguage: () {},
             onUserGuide: () {},
