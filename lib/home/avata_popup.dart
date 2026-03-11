@@ -196,8 +196,10 @@ class _PopupContent extends StatelessWidget {
               letterSpacing: 0.5,
             ),
             onTap: () {
-              Navigator.of(context).pop();
+              // Navigator.of(context).pop();
               onLogout?.call();
+
+
             },
           ),
 
