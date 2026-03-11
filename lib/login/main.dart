@@ -5,6 +5,7 @@ import 'package:matisse/login/language.dart';
 import 'package:matisse/login/sign_in.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/url_launcher.dart';
+import 'package:matisse/view_model/login_view_model.dart';
 import 'package:provider/provider.dart';
 import '../colors/colors_app.dart';
 import 'package:flutter/services.dart';
@@ -17,15 +18,17 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   // Gắn token cứng để test — sau này thay bằng token từ login
-  ApiService().saveCredentials(
-    session: 'd91b2a46-26be-4b38-8440-3d6c9caea868',
-    token:
-        'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik16WTFNamcxUlRNek5VTkRRamcxTVRFMFJEZ3lRMEUzT0RCQlFVWkVSRU5EUlRNMk1Ua3dSZyJ9.eyJuaWNrbmFtZSI6Im1hcmF0IiwibmFtZSI6Im1hcmF0QG1hdGlzc2UuYWkiLCJwaWN0dXJlIjoiaHR0cHM6Ly9zLmdyYXZhdGFyLmNvbS9hdmF0YXIvMmIwMTJhMmExZTE2ZGM1ZWY3NDc0MmVkZGZjODNkMTg_cz00ODAmcj1wZyZkPWh0dHBzJTNBJTJGJTJGY2RuLmF1dGgwLmNvbSUyRmF2YXRhcnMlMkZtYS5wbmciLCJ1cGRhdGVkX2F0IjoiMjAyNi0wMy0wOVQwNzozMDozNS4wMTdaIiwiZW1haWwiOiJtYXJhdEBtYXRpc3NlLmFpIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImlzcyI6Imh0dHBzOi8vZGV2LXBpZTU5cHl1LmV1LmF1dGgwLmNvbS8iLCJhdWQiOiJoVXVhRlg5TUw2cVJVakdUMlBDQUkwbFVIWVNLTGJQNyIsInN1YiI6ImF1dGgwfDYxYmIxYTNhMzIyMjU0MDA2OTY1NTAzZiIsImlhdCI6MTc3MzA0MTQzNSwiZXhwIjoxNzczMDc3NDM1fQ.L66ZgSAJ3436KPJzqcKTCMDDxmhNl_lhPK7HA887WthVRIbc9Zstc-n-cn2EJgeWgQJokHiXzxYOAotXcuNCwihBwoxrO91PkrLxIm46pjBTv04Yuxs99H6sAvoUQ2R1vRvXaAg01qhbDuU-MbBcEgpGd_OtL0nJ8bOZTsAZDaV0jIkCtadX6dfoigKR8hayWoNAEtpaN_xoJg9DqaXNyRahvkv9JOZ_iKg0TrUfpMoI_6_vdzY5CZ8p0aQQNXlGDY5od1xcvH2HJoRpjdiuvuGmuuKI5TQW-BnbaqFHZ4gwDciYVm_0V0zQ0dnY6XQtCxahre-iOCcwEOYV6REy2w',
-  );
+  // ApiService().saveCredentials(
+  //   session: 'b2030d9b-52c2-4c79-a0ef-4c7bc792650b',
+  //   token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik16WTFNamcxUlRNek5VTkRRamcxTVRFMFJEZ3lRMEUzT0RCQlFVWkVSRU5EUlRNMk1Ua3dSZyJ9.eyJuaWNrbmFtZSI6Im1hcmF0IiwibmFtZSI6Im1hcmF0QG1hdGlzc2UuYWkiLCJwaWN0dXJlIjoiaHR0cHM6Ly9zLmdyYXZhdGFyLmNvbS9hdmF0YXIvMmIwMTJhMmExZTE2ZGM1ZWY3NDc0MmVkZGZjODNkMTg_cz00ODAmcj1wZyZkPWh0dHBzJTNBJTJGJTJGY2RuLmF1dGgwLmNvbSUyRmF2YXRhcnMlMkZtYS5wbmciLCJ1cGRhdGVkX2F0IjoiMjAyNi0wMy0wOVQwODo1OTo1MC43NzlaIiwiZW1haWwiOiJtYXJhdEBtYXRpc3NlLmFpIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImlzcyI6Imh0dHBzOi8vZGV2LXBpZTU5cHl1LmV1LmF1dGgwLmNvbS8iLCJhdWQiOiJoVXVhRlg5TUw2cVJVakdUMlBDQUkwbFVIWVNLTGJQNyIsInN1YiI6ImF1dGgwfDYxYmIxYTNhMzIyMjU0MDA2OTY1NTAzZiIsImlhdCI6MTc3MzA0Njc5MSwiZXhwIjoxNzczMDgyNzkxfQ.rbRuPvIyBDtFIKZuAXU01rvcm8jSl9uw_jFpMBrxO5inhHjc0AxBC7SbayAtAWxt3IhWTC_rEAyTol9XSlgu6eiG53Jd6d81HKx4AmEcTX_zjgQzWuB71WU4w8cTHwSzhBPwQ-fmtiTnVnKHBezlqMz9tUAKPz3GAOACTT4k_Igk698WSbwWT7HcaMdkRGSxZkvyOhBvEPJ7N4bxzVSz_bpjGLF5pttJCIp9LsHNw0Eo6k07K9Qo2u1K1byaSQcZ4gx_dofDWXRMywHMHEZVrknNvdHsGxQXBEwuEzxDUshyUZcXhTjCWJpy0vr_mQ33xz8IDYLEV5hfnmZXafBEaA"
+  // );
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => ProjectViewModel())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginViewModel()),
+        ChangeNotifierProvider(create: (_) => ProjectViewModel())
+      ],
       child: const MyApp(),
     ),
   );

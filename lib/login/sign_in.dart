@@ -1,14 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:matisse/extension/app_router.dart';
+import 'package:provider/provider.dart';          // 👈 Thêm
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/login/language.dart';
 import 'package:matisse/login/forgot_password.dart';
 import 'package:matisse/extension/setup_widget.dart';
+import 'package:matisse/extension/app_router.dart';
 
 import '../home/project.dart';
 import '../images/image_app.dart';
+import '../view_model/login_view_model.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -18,24 +20,53 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
-  /// Controllers để đọc text input
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
-
-  /// Ẩn / hiện password
   bool obscure = true;
-
-  /// Validate đơn giản (chỉ check không rỗng)
-  bool get isValid =>
-      emailCtrl.text.isNotEmpty && passCtrl.text.isNotEmpty;
-
   final emailFocus = FocusNode();
   final passFocus = FocusNode();
 
+  bool get isValid =>
+      emailCtrl.text.isNotEmpty && passCtrl.text.isNotEmpty;
+
+  /// Hàm gọi login — giống @IBAction trong iOS
+  Future<void> _onContinuePressed() async {
+    // Ẩn bàn phím trước khi gọi API
+    // Giống view.endEditing(true) bên iOS
+    FocusScope.of(context).unfocus();
+
+    final vm = context.read<LoginViewModel>();
+    await vm.login(
+      email: emailCtrl.text.trim(),
+      password: passCtrl.text,
+    );
+
+    // Nếu login thành công thì navigate sang ProjectsScreen
+    // Dùng mounted để tránh lỗi khi widget đã bị dispose
+    if (vm.isLoggedIn && mounted) {
+      Navigator.pushReplacement( // 👈 pushReplacement để không quay lại màn login
+        context,
+        CupertinoPageRoute(builder: (_) => const ProjectsScreen()),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    emailFocus.dispose();
+    passFocus.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    // Lắng nghe LoginViewModel
+    final vm = context.watch<LoginViewModel>();
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      /// 🎨 Style status bar (nền đen, icon sáng)
       value: const SystemUiOverlayStyle(
         statusBarColor: ColorApp.blackMain1E1E1E,
         statusBarIconBrightness: Brightness.light,
@@ -43,22 +74,16 @@ class _SignInPageState extends State<SignInPage> {
       ),
       child: Scaffold(
         backgroundColor: ColorApp.blackMain1E1E1E,
-
-        /// ================= APP BAR =================
         appBar: AppBar(
           backgroundColor: ColorApp.blackMain1E1E1E,
           elevation: 0,
-
-          /// 🔙 Nút back
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-
-          /// 🌍 Icon language (push sang LanguagePage)
           actions: [
             IconButton(
-              icon: Image.asset(ImageApp.languageIcon, width: 24, height: 24,),
+              icon: Image.asset(ImageApp.languageIcon, width: 24, height: 24),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -67,8 +92,6 @@ class _SignInPageState extends State<SignInPage> {
               },
             ),
           ],
-
-          /// Divider mỏng dưới AppBar
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
             child: Container(
@@ -77,8 +100,6 @@ class _SignInPageState extends State<SignInPage> {
             ),
           ),
         ),
-
-        /// ================= BODY =================
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -86,20 +107,21 @@ class _SignInPageState extends State<SignInPage> {
             children: [
               const SizedBox(height: 20),
 
-              /// 📝 TITLE
-              const SetupTextWidget(titleLabel: "Sign in",
-                font: FontApp.robotoBold, fontSize: 24, textColor: ColorApp.whiteMainColor,),
+              const SetupTextWidget(
+                titleLabel: "Sign in",
+                font: FontApp.robotoBold,
+                fontSize: 24,
+                textColor: ColorApp.whiteMainColor,
+              ),
               const SizedBox(height: 24),
 
-              /// 📧 EMAIL FIELD
               _inputField(
                 label: "Email address",
                 hinText: "Enter email address",
                 controller: emailCtrl,
                 focusNode: emailFocus,
               ),
-
-             SizedBox(height: 20,),
+              const SizedBox(height: 20),
 
               _inputField(
                 label: "Password",
@@ -116,40 +138,71 @@ class _SignInPageState extends State<SignInPage> {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 12),
 
-              /// ▶️ CONTINUE BUTTON
+              // --- Hiển thị lỗi từ API ---
+              // Chỉ hiện khi có errorMessage
+              if (vm.errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    vm.errorMessage!,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 16),
+
+              // --- CONTINUE BUTTON ---
               SizedBox(
                 width: double.infinity,
                 height: 42,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    /// Đổi màu theo trạng thái valid
                     backgroundColor: isValid
                         ? ColorApp.blueMainColor
                         : Colors.grey.shade700,
-                    disabledBackgroundColor: ColorApp.grayBackground90CAF9Color,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppSpacing.xs4),
                     ),
                     elevation: 0,
                   ),
-                  onPressed: isValid ? () {
-                    Navigator.push(context, CupertinoPageRoute(builder: (_) => ProjectsScreen()));
-                  } : null,
-                  child: SetupTextWidget(titleLabel: "CONTINUE",
-                    font: FontApp.robotoMedium, fontSize: 15,
-                      textColor: isValid ? ColorApp.whiteMainColor : ColorApp.grayBorder525252Color),
+                  // Disable button khi đang loading hoặc form không hợp lệ
+                  onPressed: isValid && !vm.isLoading ? _onContinuePressed : null,
+                  child: vm.isLoading
+                  // Hiển thị spinner khi đang gọi API
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : SetupTextWidget(
+                    titleLabel: "CONTINUE",
+                    font: FontApp.robotoMedium,
+                    fontSize: 15,
+                    textColor: isValid
+                        ? ColorApp.whiteMainColor
+                        : ColorApp.grayBorder525252Color,
+                  ),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              /// 🔑 FORGOT PASSWORD
               Center(
                 child: TextButton(
                   onPressed: () {
-                    Navigator.push(context, CupertinoPageRoute(builder: (_) => const ForgotPasswordScreen()));
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                          builder: (_) => const ForgotPasswordScreen()),
+                    );
                   },
                   child: const Text(
                     "Forgot your password?",
@@ -158,7 +211,6 @@ class _SignInPageState extends State<SignInPage> {
                 ),
               ),
 
-              /// 🆕 CREATE ACCOUNT
               Center(
                 child: TextButton(
                   onPressed: () {},
@@ -175,9 +227,6 @@ class _SignInPageState extends State<SignInPage> {
     );
   }
 
-  /// ============================================================
-  /// 🔤 CUSTOM INPUT FIELD (Reusable)
-  /// ============================================================
   Widget _inputField({
     required String label,
     required String hinText,
@@ -191,46 +240,32 @@ class _SignInPageState extends State<SignInPage> {
       child: TextField(
         controller: controller,
         focusNode: focusNode,
-
-        /// rebuild UI khi focus đổi
         onTap: () => setState(() {}),
         onChanged: (_) => setState(() {}),
         onEditingComplete: () => setState(() {}),
-
         obscureText: obscureText,
-
-        /// ❌ text bên trong giữ nguyên màu trắng
         style: const TextStyle(color: Colors.white),
-
         decoration: InputDecoration(
           labelText: label,
           hintText: hinText,
           hintStyle: TextStyle(color: ColorApp.grayBorder525252Color),
-
-          /// label luôn ở trên
           floatingLabelBehavior: FloatingLabelBehavior.always,
-
-          /// ⭐ CHỈ label đổi màu khi focus
           labelStyle: TextStyle(
             color: focusNode.hasFocus ? ColorApp.blueMainColor : Colors.grey,
           ),
-
           filled: true,
           fillColor: const Color(0xFF1E1E1E),
-
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.xs4),
             borderSide: BorderSide(color: Colors.grey.shade700),
           ),
-
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.xs4),
             borderSide: const BorderSide(color: ColorApp.blueMainColor),
           ),
-
           suffixIcon: suffix,
         ),
       ),
     );
   }
-  }
+}

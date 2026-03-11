@@ -9,13 +9,13 @@ class ApiService {
   late Dio dio;
 
   // Token lưu in-memory — sau này có thể chuyển sang SecureStorage
-  String? _accessToken;
-  String? _sessionId;
+  static String? _accessToken;
+  static String? _sessionId;
 
   ApiService._internal() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'https://app-api.matisse.ai/api',
+        baseUrl: 'https://dev-api.matisse.ai/api',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {
@@ -33,18 +33,20 @@ class ApiService {
         // Chạy TRƯỚC mỗi request — gắn token vào header
         // Giống RequestInterceptor.adapt() bên Alamofire
         onRequest: (options, handler) {
+          // Xoá headers cũ rồi set lại toàn bộ
           if (_accessToken != null) {
             options.headers['Authorization'] = 'Bearer $_accessToken';
+            print('token ==== $_accessToken');
           }
           if (_sessionId != null) {
-            options.headers['session'] = _sessionId;
+            options.headers['session'] = _sessionId!; // 👈 Thêm ! để force unwrap
           }
-          print('➡️ REQUEST: ${options.method} ${options.uri}');
-          print('   Headers: ${options.headers}'); // 👈 Thêm dòng này
 
-          final token = options.headers['Authorization'] ?? 'NO TOKEN';
-          print('🔑 Token length: ${token.toString().length}');
-          print('🔑 Token start: ${token.toString().substring(0, 50)}');
+          // Print SAU khi gắn xong để kiểm tra chính xác
+          print('➡️ REQUEST: ${options.method} ${options.uri}');
+          print('   Authorization: ${options.headers['Authorization']?.toString().substring(0, 20)}');
+          print('   Session: ${options.headers['session']}'); // 👈 Print riêng session
+
           return handler.next(options);
         },
 
@@ -61,13 +63,30 @@ class ApiService {
     );
   }
 
+  /// POST với full URL — dùng cho các API khác base URL
+  /// Ví dụ: auth0 login dùng URL khác với API chính
+  /// POST với full URL — dùng cho các API khác base URL
+  Future<Response> postFullUrl(String fullUrl, {dynamic data}) async {
+    // Tạo Dio mới không có baseUrl — để tránh bị ghép baseUrl vào
+    final tempDio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+
+    print('➡️ POST FULL URL: $fullUrl'); // Kiểm tra URL đúng chưa
+    return await tempDio.post(fullUrl, data: data);
+  }
+
   // --- Token Management ---
 
   /// Lưu token sau khi login thành công
   void saveCredentials({required String token, String? session}) {
     _accessToken = token;
     _sessionId = session;
-    print('🔑 Credentials saved');
+    print('🔑 Credentials saved - session: $_sessionId');
   }
 
   /// Xoá token khi logout

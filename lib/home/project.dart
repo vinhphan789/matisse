@@ -125,15 +125,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         icon: const Icon(Icons.menu, color: Colors.white),
         onPressed: () => _scaffoldKey.currentState?.openDrawer(),
       ),
-      title: Text(
-        // Hiển thị tổng số project trên title
-        vm.totalCount > 0 ? 'Projects (${vm.totalCount})' : 'Projects',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+      title: SetupTextWidget(titleLabel: "Projects", font: FontApp.robotoMedium, textColor: Colors.white, fontSize: 24,),
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16),
@@ -376,7 +368,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 _buildInfoRow('Created at: ${_formatDate(project.createdTs)}'),
                 _buildInfoRow('Dentist name: ${project.dentist ?? 'N/A'}'),
                 _buildInfoRow(
-                  'Last modified at: ${_formatDate(project.updatedTs)}\n(${project.updatedBy})',
+                  'Last modified at: ${_formatDate(project.updatedTs)} (${project.updatedBy})',
                 ),
                 const SizedBox(height: 8),
                 _buildStatusBadge(project.status),
@@ -421,7 +413,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         titleLabel: text,
         font: FontApp.robotoRegular,
         fontSize: 12,
-        textColor: ColorApp.whiteMainColor.withAlpha(700),
+        textColor: ColorApp.whiteMainColor.withAlpha(700), maxLine: 2,
       ),
     );
   }

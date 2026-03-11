@@ -8,6 +8,9 @@ import '../view_model/project_view_model.dart';
 class ApiEndpoint {
   ApiEndpoint._(); // Không cho khởi tạo instance
 
+  // --- Auth ---
+  static const String login = '/oauth/token';
+
   static const languages = '/masters/languages';
 
   // --- Language ---

@@ -127,7 +127,7 @@ class ProjectViewModel extends ChangeNotifier {
           'deleted_cases': deletedCases,
         },
       );
-
+      print('📦 RESPONSE DATA: ${response.data}'); // 👈 Thêm dòng này
       // Parse response JSON -> PaginatedProjects
       final paginated = PaginatedProjects.fromJson(response.data);
 
