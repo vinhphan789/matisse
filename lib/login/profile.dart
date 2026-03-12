@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/app_router.dart';
+import 'package:matisse/extension/setup_widget.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -101,19 +102,13 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   width: 80,
                   height: 80,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF8B5CF6), // tím
+                    color: ColorApp.bruBackgroundCE93D8, // tím
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: Text(
-                      _userInitials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1,
-                      ),
-                    ),
+                    child: SetupTextWidget(titleLabel: _userInitials,
+                      font: FontApp.robotoMedium, fontSize: 30,
+                      textColor: ColorApp.whiteMainColor,)
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -134,7 +129,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     Text(
                       _userEmail,
                       style: const TextStyle(
-                        color: Color(0xFF8E8E93),
+                        color: Colors.white,
                         fontSize: 14,
                       ),
                     ),
@@ -204,12 +199,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       style: const TextStyle(color: Colors.white, fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Color(0xFF8E8E93), fontSize: 14),
+        labelStyle: const TextStyle(color: ColorApp.whiteMainColor, fontSize: 14),
 
         // Viền mặc định
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xs4),
-          borderSide: const BorderSide(color: Color(0xFF3A3A3C), width: 1),
+          borderSide: const BorderSide(color: ColorApp.grayBorder525252Color, width: 1),
         ),
 
         // Viền khi focus
@@ -219,7 +214,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         ),
 
         filled: true,
-        fillColor: const Color(0xFF2C2C2E),
+        fillColor: ColorApp.blackMain1E1E1E,
         contentPadding:
         const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
 
@@ -238,12 +233,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       style: const TextStyle(color: Colors.white, fontSize: 16),
       decoration: InputDecoration(
         labelText: 'Country',
-        labelStyle: const TextStyle(color: Color(0xFF8E8E93), fontSize: 14),
+        labelStyle: TextStyle(color: ColorApp.whiteMainColor, fontSize: 14),
 
         // Viền mặc định
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xs4),
-          borderSide: const BorderSide(color: Color(0xFF3A3A3C), width: 1),
+          borderSide: const BorderSide(color: ColorApp.grayBorder525252Color, width: 1),
         ),
 
         // Viền khi focus
@@ -253,7 +248,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         ),
 
         filled: true,
-        fillColor: const Color(0xFF2C2C2E),
+        fillColor: ColorApp.blackMain1E1E1E,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         floatingLabelBehavior: FloatingLabelBehavior.always,
       ),
@@ -282,8 +277,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           onChanged: (value) {
             setState(() => _acceptedEula = value ?? false);
           },
-          activeColor: const Color(0xFF3B82F6),
-          checkColor: Colors.white,
+          activeColor: ColorApp.blueMainColor,
+          checkColor: Colors.black,
           side: BorderSide(color: ColorApp.blueMainColor, width: 1),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.xs4)),
         ),
@@ -302,7 +297,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   TextSpan(
                     text: 'EULA',
                     style: TextStyle(
-                      color: Color(0xFF3B82F6),
+                      color: ColorApp.blueMainColor,
                       fontWeight: FontWeight.w600,
                     ),
                     // TODO: thêm TapGestureRecognizer để mở link EULA
@@ -311,7 +306,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   TextSpan(
                     text: 'data processing agreement.',
                     style: TextStyle(
-                      color: Color(0xFF3B82F6),
+                      color: ColorApp.blueMainColor,
                       fontWeight: FontWeight.w600,
                     ),
                     // TODO: thêm TapGestureRecognizer để mở link
