@@ -1,7 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/extension/setup_widget.dart';
+
+import 'coutry.dart';
+
+
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -157,7 +162,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             const SizedBox(height: 16),
 
             // ── Country Dropdown ─────────────────────────────────────────────
-            _buildDropdown(),
+            _buildCountryField(),
 
             const SizedBox(height: 16),
 
@@ -225,44 +230,63 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   // ── Widget: Dropdown Country ───────────────────────────────────────────────
-  Widget _buildDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedCountry,
-      dropdownColor: const Color(0xFF2C2C2E),
-      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF8E8E93)),
-      style: const TextStyle(color: Colors.white, fontSize: 16),
-      decoration: InputDecoration(
-        labelText: 'Country',
-        labelStyle: TextStyle(color: ColorApp.whiteMainColor, fontSize: 14),
+  Widget _buildCountryField() {
+    return InkWell(
+      onTap: () async {
+        // Present SelectCountryScreen như một full-screen modal
+        final result = await Navigator.of(context).push<String>(
+          CupertinoPageRoute(
+            fullscreenDialog: true,          // slide từ dưới lên (iOS style)
+            builder: (_) => SelectCountryScreen(
+              selectedCountry: _selectedCountry,
+            ),
+          ),
+        );
 
-        // Viền mặc định
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.xs4),
-          borderSide: const BorderSide(color: ColorApp.grayBorder525252Color, width: 1),
-        ),
-
-        // Viền khi focus
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.xs4),
-          borderSide: BorderSide(color: ColorApp.blueMainColor, width: 1),
-        ),
-
-        filled: true,
-        fillColor: ColorApp.blackMain1E1E1E,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-      ),
-      onChanged: (value) {
-        if (value != null) {
-          setState(() => _selectedCountry = value);
+        // Nếu user chọn xong và pop về, cập nhật giá trị
+        if (result != null) {
+          setState(() => _selectedCountry = result);
         }
       },
-      items: _countries
-          .map((country) => DropdownMenuItem(
-        value: country,
-        child: Text(country),
-      ))
-          .toList(),
+      borderRadius: BorderRadius.circular(AppSpacing.xs4),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Country',
+          labelStyle: const TextStyle(
+            color: ColorApp.whiteMainColor,
+            fontSize: 14,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.xs4),
+            borderSide: const BorderSide(
+              color: ColorApp.grayBorder525252Color,
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.xs4),
+            borderSide: const BorderSide(
+              color: ColorApp.blueMainColor,
+              width: 1,
+            ),
+          ),
+          filled: true,
+          fillColor: ColorApp.blackMain1E1E1E,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
+          floatingLabelBehavior: FloatingLabelBehavior.always,
+          suffixIcon: const Icon(
+            Icons.keyboard_arrow_down,
+            color: Color(0xFF8E8E93),
+          ),
+        ),
+        child: Text(
+          _selectedCountry,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
     );
   }
 
