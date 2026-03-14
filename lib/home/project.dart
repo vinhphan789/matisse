@@ -6,7 +6,10 @@ import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/home/left_menu.dart';
 
 import '../extension/app_router.dart';
+import '../login/main.dart';
+import '../login/profile.dart';
 import '../model/project_model.dart';       // 👈 ProjectModel từ API
+import '../popup/logout_popup.dart';
 import '../view_model/project_view_model.dart';
 import 'avata_popup.dart';
 import 'create_new_project.dart';
@@ -135,11 +138,29 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             avatarInitials: 'MA',
             avatarColor: ColorApp.bruBackgroundCE93D8,
             onMyProjects: () {},
-            onMyProfile: () {},
+            onMyProfile: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyProfileScreen()),
+              );
+            },
             onWebshop: () {},
             onLanguage: () {},
             onUserGuide: () {},
-            onLogout: () {},
+            onLogout: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                barrierColor: Colors.black.withOpacity(0.6),
+                builder: (_) => const LogoutAlertDialog(),
+              );
+              if (confirmed == true) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                      (route) => false, // xoá hết các màn hình trước đó
+                );
+              }
+            },
           ),
         ),
       ],
