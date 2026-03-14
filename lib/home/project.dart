@@ -386,13 +386,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                _buildInfoRow('Created at: ${_formatDate(project.createdTs)}'),
+                _buildInfoRow('Dentist name: ${project.dentist?.name ?? 'N/A'}'),
                 _buildInfoRow('Dentist name: ${project.dentist ?? 'N/A'}'),
                 _buildInfoRow(
-                  'Last modified at: ${_formatDate(project.updatedTs)} (${project.updatedBy})',
+                  'Last modified at: ${_formatDate(project.updatedTs)} (${project.updatedBy ?? 'N/A'})',
                 ),
                 const SizedBox(height: 8),
-                _buildStatusBadge(project.status),
+                _buildStatusBadge(project.status ?? ""),
               ],
             ),
           ),
@@ -431,7 +431,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     return Padding(
       padding: const EdgeInsets.only(top: 2),
       child: SetupTextWidget(
-        titleLabel: text,
+        titleLabel: text ?? "",
         font: FontApp.robotoRegular,
         fontSize: 12,
         textColor: ColorApp.whiteMainColor.withAlpha(700), maxLine: 2,
@@ -503,9 +503,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   // Parse date string từ API -> DateTime -> format đẹp
   // API trả về: "2026-03-02T10:17:04.407554Z"
-  String _formatDate(String dateStr) {
+  // ✅ Sau
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return 'N/A';
     try {
-      final dt = DateTime.parse(dateStr).toLocal(); // 👈 Convert về local timezone
+      final dt = DateTime.parse(dateStr).toLocal();
       const months = [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
@@ -515,7 +517,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       final min = dt.minute.toString().padLeft(2, '0');
       return '${months[dt.month - 1]} ${dt.day}, ${dt.year} at $hour:$min $period';
     } catch (_) {
-      return dateStr; // Nếu parse lỗi thì trả về string gốc
+      return dateStr;
     }
   }
 }

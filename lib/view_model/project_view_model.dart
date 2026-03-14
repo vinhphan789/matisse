@@ -145,6 +145,7 @@ class ProjectViewModel extends ChangeNotifier {
 
       errorMessage = null;
     } on DioException catch (e) {
+      print('❌ 403 BODY: ${e.response?.data}'); // 👈 thêm dòng này
       // Lỗi từ Dio (network, timeout, 4xx, 5xx)
       errorMessage = _handleDioError(e);
     } catch (e) {

@@ -24,11 +24,12 @@ class LoginViewModel extends ChangeNotifier {
 
   // --- Config Auth0 ---
   // Giống Info.plist bên iOS — sau này chuyển vào file config riêng
+  // ✅ Đổi sang prod config — giống curl Swift đang hoạt động
   static const String _clientId = 'LCFF8h1w7pJM1jLGuzLkdkhuv35cLER3';
   static const String _audience = 'https://devil.eu.auth0.com/api/v2/';
+  static const String _loginBaseUrl = 'https://devil.eu.auth0.com';
   static const String _realm = 'Username-Password-Authentication';
   static const String _scope = 'openid profile email offline_access';
-  static const String _loginBaseUrl = 'https://devil.eu.auth0.com';
 
   // --- Public Methods ---
 
@@ -43,6 +44,7 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Bước 1: Lấy token từ Auth0
       final response = await _api.postFullUrl(
         '$_loginBaseUrl${ApiEndpoint.login}',
         data: {
@@ -56,24 +58,33 @@ class LoginViewModel extends ChangeNotifier {
         },
       );
 
-      // Parse response JSON -> LoginModel
       final loginData = LoginModel.fromJson(response.data);
-    // Tạo sessionId local bằng UUID — giống bên iOS
-// Format: UUID không có dấu "-", viết thường
-    final sessionId = const Uuid().v4().toLowerCase();
-      print('🔑 SessionId: $sessionId'); // 👈 Thêm dòng này
-// Lưu token + sessionId vào ApiService
-    _api.saveCredentials(
-    token: loginData.idToken,
-    session: sessionId,
-    );
-      print('🔑 FULL idToken: ${loginData.idToken}');
+      final sessionId = const Uuid().v4().toLowerCase();
+
+      // Lưu credentials trước
+      _api.saveCredentials(
+        token: loginData.idToken,
+        session: sessionId,
+      );
+
+      // ✅ Bước 2: Clear session CŨ trước
+      try {
+        await _api.get(ApiEndpoint.clearSession);
+        print('✅ Session cleared');
+      } catch (e) {
+        print('⚠️ Clear session failed (bỏ qua): $e');
+        // Không throw — vẫn tiếp tục
+      }
+
+// ✅ Bước 3: Gọi profile SAU KHI đã clear
+      await _api.get(ApiEndpoint.profile);
+      print('✅ Profile fetched');
+
       isLoggedIn = true;
       errorMessage = null;
 
     } on DioException catch (e) {
-      print('❌ LOGIN ERROR STATUS: ${e.response?.statusCode}');
-      print('❌ LOGIN ERROR BODY: ${e.response?.data}'); //
+      print('❌ LOGIN ERROR: ${e.response?.statusCode} - ${e.response?.data}');
       errorMessage = _handleDioError(e);
     } catch (e) {
       errorMessage = 'Có lỗi xảy ra: $e';

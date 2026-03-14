@@ -3,51 +3,74 @@
 class ProjectModel {
   final String id;
   final String name;
-  final String patientName;
-  final String status;
-  final String description;
-  final String createdBy;
-  final String updatedBy;
-  final String createdTs;
-  final String updatedTs;
-  final ProjectImageModel? image; // Nullable — có case không có ảnh
-  final String? dentist;       // Nullable
-  final String? role;          // Nullable
+  final String? patientName;  // ✅ nullable như Swift
+  final String? status;
+  final String? description;
+  final String? createdBy;
+  final String? updatedBy;
+  final String? createdTs;
+  final String? updatedTs;
+  final ProjectImageModel? image;
+  final DentistModel? dentist;  // ✅ đổi từ String? sang DentistModel?
+  final String? role;
 
   ProjectModel({
     required this.id,
     required this.name,
-    required this.patientName,
-    required this.status,
-    required this.description,
-    required this.createdBy,
-    required this.updatedBy,
-    required this.createdTs,
-    required this.updatedTs,
+    this.patientName,
+    this.status,
+    this.description,
+    this.createdBy,
+    this.updatedBy,
+    this.createdTs,
+    this.updatedTs,
     this.image,
     this.dentist,
     this.role,
   });
 
-  /// Parse từ JSON — giống init(from decoder: Decoder) bên Swift
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
-    return ProjectModel(
-      id:          json['id']           ?? '',
-      name:        json['name']         ?? '',
-      patientName: json['patient_name'] ?? '',
-      status:      json['status']       ?? '',
-      description: json['description']  ?? '',
-      createdBy:   json['created_by']   ?? '',
-      updatedBy:   json['updated_by']   ?? '',
-      createdTs:   json['created_ts']   ?? '',
-      updatedTs:   json['updated_ts']   ?? '',
+    try {
+      return ProjectModel(
+        id:          json['id']            ?? '',
+        name:        json['name']          ?? '',
+        patientName: json['patient_name'],
+        status:      json['status'],
+        description: json['description'],
+        createdBy:   json['created_by'],
+        updatedBy:   json['updated_by'],
+        createdTs:   json['created_ts'],
+        updatedTs:   json['updated_ts'],
+        image: json['image'] != null
+            ? ProjectImageModel.fromJson(json['image'])
+            : null,
+        // ✅ dentist là object, parse an toàn
+        dentist: json['dentist'] != null && json['dentist'] is Map
+            ? DentistModel.fromJson(json['dentist'])
+            : null,
+        role: json['role'],
+      );
+    } catch (e) {
+      print('❌ ProjectModel.fromJson ERROR: $e');
+      print('❌ JSON: $json');
+      rethrow;
+    }
+  }
+}
 
-      // image có thể null — dùng ?. để parse an toàn
-      image:   json['image'] != null
-          ? ProjectImageModel.fromJson(json['image'])
-          : null,
-      dentist: json['dentist'],
-      role:    json['role'],
+// ✅ Thêm model mới cho Dentist
+class DentistModel {
+  final String? id;
+  final String? name;
+  final String? user;
+
+  DentistModel({this.id, this.name, this.user});
+
+  factory DentistModel.fromJson(Map<String, dynamic> json) {
+    return DentistModel(
+      id:   json['id']?.toString(),
+      name: json['name'],
+      user: json['user']?.toString(),
     );
   }
 }

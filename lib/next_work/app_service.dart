@@ -15,15 +15,15 @@ class ApiService {
   ApiService._internal() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'https://dev-api.matisse.ai/api',
+        baseUrl:  'https://dev-api.matisse.ai/api',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'platform': 'mobile',
-          'Accept-Language': 'en',        // 👈 Thêm dòng này
-          'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8', // 👈 Thêm dòng này
+          'Accept-Language': 'en',
+          'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
         },
       ),
     );
@@ -41,12 +41,6 @@ class ApiService {
           if (_sessionId != null) {
             options.headers['session'] = _sessionId!; // 👈 Thêm ! để force unwrap
           }
-
-          // Print SAU khi gắn xong để kiểm tra chính xác
-          print('➡️ REQUEST: ${options.method} ${options.uri}');
-          print('   Authorization: ${options.headers['Authorization']?.toString().substring(0, 20)}');
-          print('   Session: ${options.headers['session']}'); // 👈 Print riêng session
-
           return handler.next(options);
         },
 
