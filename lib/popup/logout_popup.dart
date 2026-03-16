@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../next_work/app_service.dart';
+
 /// Hiển thị dialog xác nhận đăng xuất
 Future<void> showLogoutPopup(BuildContext context) async {
   return showDialog(
@@ -116,7 +118,11 @@ class LogoutAlertDialog extends StatelessWidget {
 
 // ── Ví dụ sử dụng ─────────────────────────────────────────────────────────────
 class ExampleScreen extends StatelessWidget {
-  const ExampleScreen({super.key});
+  final ApiService _api = ApiService();
+
+
+  ExampleScreen({super.key});
+
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +144,7 @@ class ExampleScreen extends StatelessWidget {
             if (confirmed == true) {
               // TODO: xử lý logout
               debugPrint('Đã đăng xuất');
+              _api.clearCredentials();
             }
           },
           child: const Text('Log Out'),

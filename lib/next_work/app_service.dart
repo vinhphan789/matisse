@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:matisse/next_work/dio_logger.dart';
 
 /// NetworkManager — Singleton, dùng chung toàn app
 /// Giống URLSession/Alamofire Session bên iOS
@@ -55,6 +56,9 @@ class ApiService {
         },
       ),
     );
+
+    // In ra giá trị của json.
+    dio.interceptors.add(const DioLogger());
   }
 
   /// POST với full URL — dùng cho các API khác base URL
