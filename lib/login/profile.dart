@@ -4,6 +4,7 @@ import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/extension/setup_widget.dart';
 
+import '../view_model/project_view_model.dart';
 import 'coutry.dart';
 
 
@@ -16,6 +17,8 @@ class MyProfileScreen extends StatefulWidget {
 }
 
 class _MyProfileScreenState extends State<MyProfileScreen> {
+  final ProjectViewModel vm = ProjectViewModel();
+
   // ── Controllers ────────────────────────────────────────────────────────────
   final TextEditingController _fullNameController =
   TextEditingController(text: 'Marat');

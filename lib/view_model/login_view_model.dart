@@ -4,7 +4,9 @@ import 'package:uuid/uuid.dart';
 
 import '../../../api_endpoint/api_endpoint.dart';
 import '../model/language_model.dart';
+import '../model/profile_model.dart';
 import '../next_work/app_service.dart';
+import '../user_storage.dart';
 
 /// ViewModel cho màn Login
 /// Giống ViewModel + ObservableObject bên iOS
@@ -77,7 +79,11 @@ class LoginViewModel extends ChangeNotifier {
       }
 
 // ✅ Bước 3: Gọi profile SAU KHI đã clear
-      await _api.get(ApiEndpoint.profile);
+      final profileResponse = await _api.get(ApiEndpoint.profile);
+      final profile = ProfileModel.fromJson(profileResponse.data);
+
+      // Lưu xuống user default.
+      await UserStorage.shared.saveProfile(profile);
       print('✅ Profile fetched');
 
       isLoggedIn = true;
@@ -97,6 +103,7 @@ class LoginViewModel extends ChangeNotifier {
   /// Logout — xoá token
   void logout() {
     _api.clearCredentials();
+    UserStorage.shared.clearProfile();
     isLoggedIn = false;
     notifyListeners();
   }

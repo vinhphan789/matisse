@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_popup/flutter_popup.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/setup_widget.dart';
+import 'package:matisse/extension/string.dart';
 import 'package:matisse/home/left_menu.dart';
 
 import '../extension/app_router.dart';
@@ -10,6 +11,7 @@ import '../login/main.dart';
 import '../login/profile.dart';
 import '../model/project_model.dart';       // 👈 ProjectModel từ API
 import '../popup/logout_popup.dart';
+import '../view_model/profile_view_model.dart';
 import '../view_model/project_view_model.dart';
 import 'avata_popup.dart';
 import 'create_new_project.dart';
@@ -27,7 +29,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   // ViewModel — KHÔNG dùng Provider vì bạn đang dùng AnimatedBuilder
   final ProjectViewModel vm = ProjectViewModel();
-
+  final ProfileViewModel profileVM = ProfileViewModel();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController(); // 👈 Để detect scroll cuối list
 
@@ -133,9 +135,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: AvatarPopupButton(
-            userName: 'Marat',
-            userEmail: 'marat@matisse.ai',
-            avatarInitials: 'MA',
+            userName: profileVM.profile?.name.getName() ?? "",
+            userEmail: profileVM.profile?.name ?? "",
+            avatarInitials: profileVM.profile?.name.getAbbName() ?? "",
             avatarColor: ColorApp.bruBackgroundCE93D8,
             onMyProjects: () {},
             onMyProfile: () {
