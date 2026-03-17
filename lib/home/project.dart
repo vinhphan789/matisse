@@ -7,6 +7,7 @@ import 'package:matisse/extension/string.dart';
 import 'package:matisse/home/left_menu.dart';
 
 import '../extension/app_router.dart';
+import '../login/language.dart';
 import '../login/main.dart';
 import '../login/profile.dart';
 import '../model/project_model.dart';       // 👈 ProjectModel từ API
@@ -147,7 +148,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               );
             },
             onWebshop: () {},
-            onLanguage: () {},
+            onLanguage: () {
+              Navigator.push(
+                context,
+                CupertinoPageRoute(
+                  builder: (_) => LanguagePage(),
+                ),
+              );
+            },
             onUserGuide: () {},
             onLogout: () async {
               final confirmed = await showDialog<bool>(
