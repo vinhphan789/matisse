@@ -3,52 +3,65 @@ import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/app_router.dart';
 import 'package:matisse/extension/setup_widget.dart';
+import 'package:matisse/extension/string.dart';
+import 'package:matisse/view_model/profile_view_model.dart';
 
 import '../view_model/project_view_model.dart';
 import 'coutry.dart';
 
-
-
 class MyProfileScreen extends StatefulWidget {
-  const MyProfileScreen({super.key});
+  // 🍎 Swift: var viewModel: ProfileViewModel
+  // 🐦 Flutter: final field, truyền từ màn trước qua constructor
+  final ProfileViewModel profile;
+
+  const MyProfileScreen({super.key, required this.profile}); // 👈 thêm const + super.key
 
   @override
   State<MyProfileScreen> createState() => _MyProfileScreenState();
 }
 
 class _MyProfileScreenState extends State<MyProfileScreen> {
-  final ProjectViewModel vm = ProjectViewModel();
 
   // ── Controllers ────────────────────────────────────────────────────────────
-  final TextEditingController _fullNameController =
-  TextEditingController(text: 'Marat');
-  final TextEditingController _addressController =
-  TextEditingController(text: 's7s7s');
-  final TextEditingController _cityController =
-  TextEditingController(text: 'sjsj');
+  // 🍎 Swift: @State var fullName: String = ""
+  // 🐦 Flutter: TextEditingController — giống UITextField delegate
+  //             Khởi tạo text rỗng trước, điền sau ở initState
+  late TextEditingController _fullNameController;
+  late TextEditingController _addressController;
+  late TextEditingController _cityController;
+  // 👆 dùng late vì cần data từ ViewModel để khởi tạo
+  //    late = "tôi hứa sẽ gán trước khi dùng" — compile không báo lỗi
 
   // ── State ──────────────────────────────────────────────────────────────────
-  String _selectedCountry = 'Algeria';
+  String _selectedCountry = '';
   bool _acceptedEula = true;
 
-  // Danh sách quốc gia mẫu
-  final List<String> _countries = [
-    'Algeria',
-    'France',
-    'Germany',
-    'United States',
-    'Vietnam',
-    'United Kingdom',
-  ];
+  @override
+  void initState() {
+    super.initState();
 
-  // Thông tin user hiển thị phía trên
-  final String _userName = 'Marat';
-  final String _userEmail = 'marat@matisse.ai';
-  final String _userInitials = 'MA';
+    // 🍎 Swift: viewDidLoad — nơi setup data sau khi view được tạo
+    // 🐦 Flutter: initState — tương đương viewDidLoad
+
+    // Lấy profile từ ViewModel để điền vào các field
+    // widget.profile = truy cập vào field của StatefulWidget từ State
+    // 🍎 Swift: self.viewModel.profile
+    // 🐦 Flutter: widget.xxx — cách duy nhất để State access StatefulWidget fields
+    final p = widget.profile.profile;
+
+    _fullNameController = TextEditingController(text: p?.name ?? '');
+    _addressController  = TextEditingController(text: p?.address1 ?? '');
+    _cityController     = TextEditingController(text: p?.city ?? '');
+
+    // Lưu country ban đầu — country trong model là int (id)
+    // TODO: map country id → country name khi có danh sách
+    _selectedCountry = p?.country.toString() ?? '';
+  }
 
   @override
   void dispose() {
-    // Giải phóng bộ nhớ khi widget bị huỷ
+    // 🍎 Swift: ARC tự dọn — không cần làm gì
+    // 🐦 Flutter: PHẢI dispose controller thủ công để tránh memory leak
     _fullNameController.dispose();
     _addressController.dispose();
     _cityController.dispose();
@@ -74,6 +87,10 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Lấy profile mỗi lần build — để UI tự cập nhật nếu ViewModel thay đổi
+    // 🍎 Swift: @ObservedObject tự động — Flutter phải lấy thủ công
+    final p = widget.profile.profile;
+
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1E),
 
@@ -102,31 +119,37 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
             // ── Avatar + Tên + Email ────────────────────────────────────────
             Row(
               children: [
-                // Avatar hình tròn với chữ viết tắt
                 Container(
                   width: 80,
                   height: 80,
                   decoration: const BoxDecoration(
-                    color: ColorApp.bruBackgroundCE93D8, // tím
+                    color: ColorApp.bruBackgroundCE93D8,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: SetupTextWidget(titleLabel: _userInitials,
-                      font: FontApp.robotoMedium, fontSize: 30,
-                      textColor: ColorApp.whiteMainColor,)
+                    child: SetupTextWidget(
+                      // 🍎 Swift: viewModel.profile?.name.toInitials() ?? "??"
+                      // 🐦 Flutter: ?. và ?? hoàn toàn giống Swift
+                      titleLabel: p?.name.getName() ?? '??', // ← thay 'MA'
+                      font: FontApp.robotoMedium,
+                      fontSize: 30,
+                      textColor: ColorApp.whiteMainColor,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
 
-                // Tên và email
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _userName,
+                      // 🍎 Swift: viewModel.profile?.name ?? "User"
+                      // 🐦 Flutter: hoàn toàn giống
+                      p?.name ?? 'User', // ← thay _userName hardcode
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -135,7 +158,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _userEmail,
+                      p?.name ?? '', // ← thay _userEmail hardcode
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -151,7 +174,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             // ── Full Name ───────────────────────────────────────────────────
             _buildTextField(
               label: 'Full Name',
-              controller: _fullNameController,
+              controller: _fullNameController, // ← đã có data từ initState
             ),
 
             const SizedBox(height: 16),
@@ -159,7 +182,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             // ── Address ─────────────────────────────────────────────────────
             _buildTextField(
               label: 'Address',
-              controller: _addressController,
+              controller: _addressController, // ← đã có data từ initState
             ),
 
             const SizedBox(height: 16),
@@ -172,7 +195,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             // ── City ─────────────────────────────────────────────────────────
             _buildTextField(
               label: 'City',
-              controller: _cityController,
+              controller: _cityController, // ← đã có data từ initState
             ),
 
             const SizedBox(height: 24),
@@ -208,25 +231,17 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: ColorApp.whiteMainColor, fontSize: 14),
-
-        // Viền mặc định
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xs4),
           borderSide: const BorderSide(color: ColorApp.grayBorder525252Color, width: 1),
         ),
-
-        // Viền khi focus
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xs4),
           borderSide: const BorderSide(color: ColorApp.blueMainColor, width: 1),
         ),
-
         filled: true,
         fillColor: ColorApp.blackMain1E1E1E,
-        contentPadding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-
-        // Đẩy label lên trên khi có nội dung
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         floatingLabelBehavior: FloatingLabelBehavior.always,
       ),
     );
@@ -236,17 +251,17 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Widget _buildCountryField() {
     return InkWell(
       onTap: () async {
-        // Present SelectCountryScreen như một full-screen modal
         final result = await Navigator.of(context).push<String>(
           CupertinoPageRoute(
-            fullscreenDialog: true,          // slide từ dưới lên (iOS style)
+            fullscreenDialog: true,
             builder: (_) => SelectCountryScreen(
               selectedCountry: _selectedCountry,
             ),
           ),
         );
 
-        // Nếu user chọn xong và pop về, cập nhật giá trị
+        // 🍎 Swift: if let result = result { self.selectedCountry = result }
+        // 🐦 Flutter: if (result != null) — optional unwrap tương đương
         if (result != null) {
           setState(() => _selectedCountry = result);
         }
@@ -255,39 +270,28 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: 'Country',
-          labelStyle: const TextStyle(
-            color: ColorApp.whiteMainColor,
-            fontSize: 14,
-          ),
+          labelStyle: const TextStyle(color: ColorApp.whiteMainColor, fontSize: 14),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.xs4),
-            borderSide: const BorderSide(
-              color: ColorApp.grayBorder525252Color,
-              width: 1,
-            ),
+            borderSide: const BorderSide(color: ColorApp.grayBorder525252Color, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.xs4),
-            borderSide: const BorderSide(
-              color: ColorApp.blueMainColor,
-              width: 1,
-            ),
+            borderSide: const BorderSide(color: ColorApp.blueMainColor, width: 1),
           ),
           filled: true,
           fillColor: ColorApp.blackMain1E1E1E,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 18,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           floatingLabelBehavior: FloatingLabelBehavior.always,
-          suffixIcon: const Icon(
-            Icons.keyboard_arrow_down,
-            color: Color(0xFF8E8E93),
-          ),
+          suffixIcon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF8E8E93)),
         ),
         child: Text(
-          _selectedCountry,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
+          _selectedCountry.isEmpty ? 'Select country' : _selectedCountry,
+          style: TextStyle(
+            // Hiển thị grey nếu chưa chọn, white nếu đã có
+            color: _selectedCountry.isEmpty ? Colors.grey : Colors.white,
+            fontSize: 16,
+          ),
         ),
       ),
     );
@@ -298,10 +302,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Checkbox tuỳ chỉnh màu
         Checkbox(
           value: _acceptedEula,
           onChanged: (value) {
+            // 🍎 Swift: self.acceptedEula = value ?? false
+            // 🐦 Flutter: setState — báo Flutter rebuild UI
+            //             setState tương đương @State didSet bên Swift
             setState(() => _acceptedEula = value ?? false);
           },
           activeColor: ColorApp.blueMainColor,
@@ -309,10 +315,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           side: BorderSide(color: ColorApp.blueMainColor, width: 1),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.xs4)),
         ),
-
         const SizedBox(width: 4),
-
-        // Text với link highlight
         Expanded(
           child: Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -327,7 +330,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       color: ColorApp.blueMainColor,
                       fontWeight: FontWeight.w600,
                     ),
-                    // TODO: thêm TapGestureRecognizer để mở link EULA
                   ),
                   TextSpan(text: ' and '),
                   TextSpan(
@@ -336,7 +338,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       color: ColorApp.blueMainColor,
                       fontWeight: FontWeight.w600,
                     ),
-                    // TODO: thêm TapGestureRecognizer để mở link
                   ),
                 ],
               ),
@@ -353,7 +354,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       width: double.infinity,
       height: AppSpacing.viewHeight,
       child: ElevatedButton(
-        onPressed: _acceptedEula ? _onSave : null, // disable nếu chưa tick EULA
+        onPressed: _acceptedEula ? _onSave : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF3A3A3C),
           disabledBackgroundColor: const Color(0xFF3A3A3C),

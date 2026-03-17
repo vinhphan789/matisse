@@ -143,7 +143,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             onMyProfile: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const MyProfileScreen()),
+                MaterialPageRoute(builder: (_) => MyProfileScreen(profile: profileVM)),
               );
             },
             onWebshop: () {},

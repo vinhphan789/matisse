@@ -5,6 +5,7 @@ import 'package:matisse/login/language.dart';
 import 'package:matisse/login/sign_in.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/url_launcher.dart';
+import 'package:matisse/view_model/language_viewmodel.dart';
 import 'package:matisse/view_model/login_view_model.dart';
 import 'package:provider/provider.dart';
 import '../colors/colors_app.dart';
@@ -26,6 +27,7 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => LanguageViewModel()),
         ChangeNotifierProvider(create: (_) => LoginViewModel()),
         ChangeNotifierProvider(create: (_) => ProjectViewModel())
       ],
@@ -67,8 +69,6 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  String selected = "English";
-
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height / 4;
@@ -95,17 +95,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     alignment: Alignment.topRight,
                     child: IconButton(
                       onPressed: () async {
-                        final result = await Navigator.push(
+                        await Navigator.push(
                           context,
                           CupertinoPageRoute(
-                            builder: (_) => LanguagePage(selected: selected),
+                            builder: (_) => LanguagePage(),
                           ),
                         );
-                        if (result != null) {
-                          setState(() {
-                            selected = result; // ✅ wrap trong setState
-                          });
-                        }
                       },
                       icon: Image.asset(
                         ImageApp.languageIcon,

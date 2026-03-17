@@ -13,12 +13,18 @@ class LanguageViewModel extends ChangeNotifier {
 
   // Data hiển thị ra UI
   List<LanguageModel> languages = [];
+  LanguageModel? languageSelected;
 
   // Loading state
   bool isLoading = false;
 
   // Error message
   String? error;
+
+  void selectedLanguage(LanguageModel language) {
+    languageSelected = language;
+    notifyListeners();
+  }
 
   /// Hàm gọi API
   Future<void> fetchLanguage() async {
