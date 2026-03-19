@@ -5,6 +5,7 @@ import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/string.dart';
 import 'package:matisse/home/left_menu.dart';
+import 'package:provider/provider.dart';
 
 import '../extension/app_router.dart';
 import '../login/language.dart';
@@ -29,7 +30,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   int _selectedTab = 0;
 
   // ViewModel — KHÔNG dùng Provider vì bạn đang dùng AnimatedBuilder
-  final ProjectViewModel vm = ProjectViewModel();
+  late ProjectViewModel vm ;
   final ProfileViewModel profileVM = ProfileViewModel();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController(); // 👈 Để detect scroll cuối list
@@ -44,22 +45,33 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   @override
   void initState() {
     super.initState();
+    vm = context.read<ProjectViewModel>();
 
     // Gọi API lần đầu sau khi widget build xong
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      vm.fetchProjects();
+      if (vm.projects.isEmpty) {
+        vm.fetchProjects();
+      }
     });
 
     // Lắng nghe scroll — khi gần cuối list thì load more
     _scrollController.addListener(() {
       final position = _scrollController.position;
       final isNearBottom = position.pixels >= position.maxScrollExtent - 200;
+
+
+      // 👈 Thêm log này để xem giá trị thực tế
+      print('📜 scroll: pixels=${position.pixels.toInt()} max=${position.maxScrollExtent.toInt()} isNearBottom=$isNearBottom hasMore=${vm.hasMore} isLoadingMore=${vm.isLoadingMore} isLoading=${vm.isLoading}');
+
       if (isNearBottom) {
-        // Truyền search query + tab hiện tại vào loadMore
-        vm.loadMore(
-          search: _searchQuery,
-          shared: _selectedTab == 1, // Tab 0 = MY PROJECTS, Tab 1 = SHARED
-        );
+        final vm = context.read<ProjectViewModel>();
+
+        if (vm.hasMore && !vm.isLoadingMore && !vm.isLoading) {
+          vm.loadMore(
+            search: _searchQuery,
+            shared: _selectedTab == 1,
+          );
+        }
       }
     });
   }
@@ -73,12 +85,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   // Khi user đổi tab — fetch lại với param shared tương ứng
   void _onTabChanged(int index) {
+    if (_selectedTab == index) return; // ✅ Không làm gì nếu tap tab đang chọn
     setState(() => _selectedTab = index);
     vm.fetchProjects(
       search: _searchQuery,
-      shared: index == 1, // Tab 1 = SHARED
+      shared: index == 1,
     );
   }
+
 
   // Khi user gõ search — gọi API sau 500ms (debounce)
   void _onSearchChanged(String value) {
@@ -99,24 +113,19 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: vm,
-      builder: (context, _) {
-        return Scaffold(
-          key: _scaffoldKey,
-          drawer: const MatisseDrawer(),
-          backgroundColor: ColorApp.blackMain1E1E1E,
-          appBar: _buildAppBar(),
-          body: Column(
-            children: [
-              _buildSearchBar(),
-              _buildTabBar(),
-              _buildSortLabel(),
-              Expanded(child: _buildProjectList()),
-            ],
-          ),
-        );
-      },
+    return Scaffold(
+      key: _scaffoldKey,
+      drawer: const MatisseDrawer(),
+      backgroundColor: ColorApp.blackMain1E1E1E,
+      appBar: _buildAppBar(),
+      body: Column(
+        children: [
+          _buildSearchBar(),
+          _buildTabBar(),
+          _buildSortLabel(),
+          Expanded(child: _buildProjectList()),
+        ],
+      ),
     );
   }
 
@@ -306,11 +315,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   // PROJECT LIST
   // ============================================================
   Widget _buildProjectList() {
-
-    // --- State 1: Loading lần đầu ---
-    if (vm.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final vm = context.watch<ProjectViewModel>();
 
     // --- State 2: Có lỗi và chưa có data ---
     if (vm.errorMessage != null && vm.projects.isEmpty) {
@@ -333,13 +338,28 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     }
 
     // --- State 3: Không có data ---
-    if (vm.hasFetched && vm.projects.isEmpty && vm.errorMessage == null) {
-      return const Center(
-        child: Text('No projects found', style: TextStyle(color: Colors.grey)),
+    // --- State 3: Không có data ---
+    if (vm.hasFetched && vm.projects.isEmpty && vm.errorMessage == null && !vm.isShoHUD) {
+      return RefreshIndicator(
+        color: ColorApp.blueMainColor,
+        onRefresh: () async {
+          await vm.refreshProjects(
+            search: _searchQuery,
+            shared: _selectedTab == 1,
+          );
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(), // ✅ Cho phép kéo dù không có item
+          children: const [
+            SizedBox(height: 200),
+            Center(
+              child: Text('No projects found', style: TextStyle(color: Colors.grey)),
+            ),
+          ],
+        ),
       );
     }
 
-    // --- State 4: Có data ---
     // --- State 4: Có data ---
     return RefreshIndicator(
       color: ColorApp.blueMainColor, // 👈 Màu spinner kéo xuống

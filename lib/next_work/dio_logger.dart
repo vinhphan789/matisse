@@ -151,7 +151,7 @@ class DioLogger extends Interceptor {
   /// 🍎 Swift/Xcode console: không cần workaround này vì Xcode hiển thị đủ.
   /// 🐦 Flutter/Android Studio: cần thiết để không bị cắt log.
   void _printLongString(String text, {bool clean = false}) {
-    const chunkSize = 800;
+    const chunkSize = 10000;
     for (var i = 0; i < text.length; i += chunkSize) {
       final end = (i + chunkSize < text.length) ? i + chunkSize : text.length;
       final chunk = text.substring(i, end);

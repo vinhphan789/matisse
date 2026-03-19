@@ -1,168 +1,161 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:matisse/model/profile_model.dart';
+import 'package:flutter/cupertino.dart';
 
-import '../../../api_endpoint/api_endpoint.dart';
+import '../api_endpoint/api_endpoint.dart';
 import '../extension/loading.dart';
 import '../model/project_model.dart';
 import '../next_work/app_service.dart';
-import '../user_storage.dart';
 
-/// ViewModel cho màn Projects
-/// Giống ViewModel + ObservableObject bên iOS
-/// Kế thừa ChangeNotifier — giống @Published bên Swift
 class ProjectViewModel extends ChangeNotifier {
   final ApiService _api = ApiService();
 
   // --- State ---
+  List<ProjectModel> myProjects = [];
+  List<ProjectModel> sharedProjects = [];
 
-  /// Danh sách project hiển thị ra UI
-  List<ProjectModel> projects = [];
-
-  /// Đang loading lần đầu
   bool isLoading = false;
-  bool isShoHUD = false; // 👈 Thêm biến này
+  bool isShoHUD = false;
   bool hasFetched = false;
-  /// Đang load thêm trang tiếp (pagination)
   bool isLoadingMore = false;
 
-  /// Lỗi — null nghĩa là không có lỗi
   String? errorMessage;
-
-  /// Tổng số project từ API (dùng để hiển thị "194 projects")
   int totalCount = 0;
 
-  /// Còn data để load tiếp không
-  bool hasMore = true;
+  // --- Pagination riêng cho từng tab ---
+  int _myOffset = 0;
+  int _sharedOffset = 0;
+  bool _myHasMore = true;
+  bool _sharedHasMore = true;
+  bool _currentShared = false;
 
-  // --- Pagination (private) ---
-  int _currentOffset = 0;
   static const int _limit = 10;
+
+  // --- Getters --- UI chỉ cần dùng 2 cái này
+  List<ProjectModel> get projects => _currentShared ? sharedProjects : myProjects;
+  bool get hasMore => _currentShared ? _sharedHasMore : _myHasMore;
 
   // --- Public Methods ---
 
-  /// Fetch lần đầu — gọi khi màn hình init
-  /// Giống viewDidLoad bên iOS
   Future<void> fetchProjects({
     String search = '',
     bool deletedCases = false,
     bool shared = false,
   }) async {
-    // Reset toàn bộ state về ban đầu
-    _currentOffset = 0;
-    projects = [];
-    hasMore = true;
+    _currentShared = shared;
+
+    if (shared) {
+      _sharedOffset = 0;
+      _sharedHasMore = true;
+      // ✅ Chỉ fetch nếu chưa có data
+      if (sharedProjects.isNotEmpty) {
+        notifyListeners();
+        return;
+      }
+    } else {
+      _myOffset = 0;
+      _myHasMore = true;
+      // ✅ Chỉ fetch nếu chưa có data
+      if (myProjects.isNotEmpty) {
+        notifyListeners();
+        return;
+      }
+    }
+
     errorMessage = null;
-
     isLoading = true;
-    // notifyListeners(); // Báo UI hiển thị loading
     LoadingService().show();
+    notifyListeners();
 
-    await _loadProjects(
-      search: search,
-      deletedCases: deletedCases,
-      shared: shared,
-    );
-
+    await _loadProjects(search: search, deletedCases: deletedCases, shared: shared);
     hasFetched = true;
   }
 
-  /// Kéo làm mới — không show loading toàn màn hình
   Future<void> refreshProjects({
     String search = '',
     bool shared = false,
   }) async {
-    isShoHUD = true; // 👈 KHÔNG set isLoading = true
+    _currentShared = shared;
+    isShoHUD = true;
     notifyListeners();
 
-    _currentOffset = 0;
+    if (shared) {
+      _sharedOffset = 0;
+      _sharedHasMore = true;
+    } else {
+      _myOffset = 0;
+      _myHasMore = true;
+    }
 
-    hasMore = true;
     errorMessage = null;
 
-    await _loadProjects(
-      search: search,
-      deletedCases: false,
-      shared: shared,
-    );
+    await _loadProjects(search: search, deletedCases: false, shared: shared);
 
     isShoHUD = false;
     notifyListeners();
   }
 
-  /// Load thêm trang tiếp — gọi khi user scroll xuống cuối list
   Future<void> loadMore({
     String search = '',
     bool deletedCases = false,
     bool shared = false,
   }) async {
-    // Không load nếu đang loading hoặc hết data
     if (isLoading || isLoadingMore || !hasMore) return;
 
     isLoadingMore = true;
-    notifyListeners(); // Báo UI hiển thị spinner ở cuối list
+    notifyListeners();
 
-    await _loadProjects(
-      search: search,
-      deletedCases: deletedCases,
-      shared: shared,
-    );
+    await _loadProjects(search: search, deletedCases: deletedCases, shared: shared);
   }
 
   // --- Private Methods ---
 
-  /// Hàm gọi API thực sự
-  /// Tách private để fetchProjects và loadMore đều dùng chung
   Future<void> _loadProjects({
     required String search,
     required bool deletedCases,
     required bool shared,
   }) async {
     try {
+      final offset = shared ? _sharedOffset : _myOffset; // ✅ offset đúng tab
+
       final response = await _api.get(
         ApiEndpoint.projects,
         queryParams: {
           'shared': shared,
           'limit': _limit,
-          'offset': _currentOffset,
+          'offset': offset,
           'search': search,
           'deleted_cases': deletedCases,
         },
       );
-      print('📦 RESPONSE DATA: ${response.data}'); // 👈 Thêm dòng này
-      // Parse response JSON -> PaginatedProjects
+
       final paginated = PaginatedProjects.fromJson(response.data);
 
-      // Cộng dồn vào list — không replace (để support load more)
-      projects.addAll(paginated.results);
+      // Cộng dồn vào đúng list
+      if (shared) {
+        sharedProjects.addAll(paginated.results);
+        _sharedOffset += paginated.results.length;
+        _sharedHasMore = paginated.next != null;
+      } else {
+        myProjects.addAll(paginated.results);
+        _myOffset += paginated.results.length;
+        _myHasMore = paginated.next != null;
+      }
 
-      // Lưu tổng số để hiển thị UI
       totalCount = paginated.count;
-
-      // Cập nhật offset cho lần load tiếp
-      _currentOffset += paginated.results.length;
-
-      // next == null nghĩa là đã hết data
-      hasMore = paginated.next != null;
-
       errorMessage = null;
     } on DioException catch (e) {
-      print('❌ 403 BODY: ${e.response?.data}'); // 👈 thêm dòng này
-      // Lỗi từ Dio (network, timeout, 4xx, 5xx)
+      print('❌ ERROR: ${e.response?.data}');
       errorMessage = _handleDioError(e);
     } catch (e) {
-      // Lỗi khác (parse JSON, v.v.)
       errorMessage = 'Có lỗi xảy ra: $e';
     } finally {
-      // Dù thành công hay thất bại đều tắt loading
       isLoading = false;
-      LoadingService().hide();
       isLoadingMore = false;
-      notifyListeners(); // Báo UI cập nhật
+      LoadingService().hide();
+      notifyListeners();
     }
   }
 
-  /// Xử lý lỗi Dio thành message thân thiện
   String _handleDioError(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
