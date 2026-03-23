@@ -339,7 +339,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     // --- State 3: Không có data ---
     // --- State 3: Không có data ---
-    if (vm.hasFetched && vm.projects.isEmpty && vm.errorMessage == null && !vm.isShoHUD) {
+    if (vm.hasFetched && vm.projects.isEmpty && vm.errorMessage == null && !vm.isShoHUD && !vm.isLoading) {
       return RefreshIndicator(
         color: ColorApp.blueMainColor,
         onRefresh: () async {

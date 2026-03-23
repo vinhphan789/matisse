@@ -134,7 +134,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     child: SetupTextWidget(
                       // 🍎 Swift: viewModel.profile?.name.toInitials() ?? "??"
                       // 🐦 Flutter: ?. và ?? hoàn toàn giống Swift
-                      titleLabel: p?.name.getName() ?? '??', // ← thay 'MA'
+                      titleLabel: p?.name.getAbbName() ?? '??', // ← thay 'MA'
                       font: FontApp.robotoMedium,
                       fontSize: 30,
                       textColor: ColorApp.whiteMainColor,
@@ -143,29 +143,20 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ),
                 const SizedBox(width: 16),
 
-                Column(
+                Expanded(child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      // 🍎 Swift: viewModel.profile?.name ?? "User"
-                      // 🐦 Flutter: hoàn toàn giống
-                      p?.name ?? 'User', // ← thay _userName hardcode
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    SetupTextWidget(titleLabel: p?.name.getName() ?? "User",
+                      font: FontApp.robotoMedium, fontSize: 25, maxLine: 2, textColor: Colors.white,),
+
                     const SizedBox(height: 4),
-                    Text(
-                      p?.name ?? '', // ← thay _userEmail hardcode
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
+
+                    SetupTextWidget(titleLabel: p?.name ?? "User",
+                      font: FontApp.robotoMedium, fontSize: 14, maxLine: 2,
+                      textColor: Colors.white,),
                   ],
-                ),
+                ),)
+
               ],
             ),
 
