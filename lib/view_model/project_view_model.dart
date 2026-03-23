@@ -1,5 +1,11 @@
+// ============================================================
+// FILE 2: lib/view_model/project_view_model.dart
+// ✅ Chỉ thêm phần sort LOCAL — không thay đổi gì liên quan đến API
+// ============================================================
+
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:matisse/home/sort_project.dart';
 
 import '../api_endpoint/api_endpoint.dart';
 import '../extension/loading.dart';
@@ -9,7 +15,7 @@ import '../next_work/app_service.dart';
 class ProjectViewModel extends ChangeNotifier {
   final ApiService _api = ApiService();
 
-  // --- State ---
+  // --- State gốc — KHÔNG đổi ---
   List<ProjectModel> myProjects = [];
   List<ProjectModel> sharedProjects = [];
 
@@ -21,7 +27,6 @@ class ProjectViewModel extends ChangeNotifier {
   String? errorMessage;
   int totalCount = 0;
 
-  // --- Pagination riêng cho từng tab ---
   int _myOffset = 0;
   int _sharedOffset = 0;
   bool _myHasMore = true;
@@ -30,11 +35,70 @@ class ProjectViewModel extends ChangeNotifier {
 
   static const int _limit = 10;
 
-  // --- Getters --- UI chỉ cần dùng 2 cái này
+  // ✅ THÊM MỚI: lưu sort hiện tại, mặc định là createdAt tăng dần
+  SortProject currentSort = const SortProject(field: SortField.createdAt);
+
+  // ============================================================
+  // ✅ THÊM MỚI: getter trả về list đã được sort
+  // UI sẽ dùng sortedProjects thay vì projects trực tiếp
+  // ============================================================
+  List<ProjectModel> get sortedProjects {
+    // Lấy list gốc (my hoặc shared tuỳ tab đang chọn)
+    final list = List<ProjectModel>.from(
+      _currentShared ? sharedProjects : myProjects,
+    );
+
+    list.sort((a, b) {
+      int compare;
+
+      switch (currentSort.field) {
+        case SortField.name:
+        // So sánh tên A-Z (không phân biệt hoa thường)
+          compare = (a.name).toLowerCase().compareTo((b.name).toLowerCase());
+          break;
+
+        case SortField.createdAt:
+        // So sánh ngày tạo
+        // createdTs là String dạng "2026-01-09T10:00:00Z"
+        // DateTime.parse để chuyển thành DateTime rồi so sánh
+          final aDate = DateTime.tryParse(a.createdTs ?? '') ?? DateTime(0);
+          final bDate = DateTime.tryParse(b.createdTs ?? '') ?? DateTime(0);
+          compare = aDate.compareTo(bDate);
+          break;
+
+        case SortField.lastModifiedAt:
+        // So sánh ngày sửa cuối
+          final aDate = DateTime.tryParse(a.updatedTs ?? '') ?? DateTime(0);
+          final bDate = DateTime.tryParse(b.updatedTs ?? '') ?? DateTime(0);
+          compare = aDate.compareTo(bDate);
+          break;
+
+        case SortField.status:
+        // So sánh status A-Z
+          compare = (a.status ?? '').compareTo(b.status ?? '');
+          break;
+      }
+
+      // Nếu descending thì đảo ngược kết quả so sánh
+      return currentSort.order == SortOrder.ascending ? compare : -compare;
+    });
+
+    return list;
+  }
+
+  // --- Getter cũ — GIỮ NGUYÊN để không break code khác ---
   List<ProjectModel> get projects => _currentShared ? sharedProjects : myProjects;
   bool get hasMore => _currentShared ? _sharedHasMore : _myHasMore;
 
-  // --- Public Methods ---
+  // ✅ THÊM MỚI: hàm UI gọi khi user chọn sort
+  // Chỉ cập nhật currentSort rồi notifyListeners để UI rebuild
+  // KHÔNG gọi API, KHÔNG fetch lại gì cả
+  void applySort(SortProject sort) {
+    currentSort = sort;
+    notifyListeners(); // ViewModel thông báo cho UI rebuild với list đã sort mới
+  }
+
+  // --- Tất cả hàm bên dưới GIỮ NGUYÊN 100% ---
 
   Future<void> fetchProjects({
     String search = '',
@@ -46,7 +110,6 @@ class ProjectViewModel extends ChangeNotifier {
     if (shared) {
       _sharedOffset = 0;
       _sharedHasMore = true;
-      // ✅ Chỉ fetch nếu chưa có data
       if (sharedProjects.isNotEmpty) {
         notifyListeners();
         return;
@@ -54,7 +117,6 @@ class ProjectViewModel extends ChangeNotifier {
     } else {
       _myOffset = 0;
       _myHasMore = true;
-      // ✅ Chỉ fetch nếu chưa có data
       if (myProjects.isNotEmpty) {
         notifyListeners();
         return;
@@ -87,9 +149,7 @@ class ProjectViewModel extends ChangeNotifier {
     }
 
     errorMessage = null;
-
     await _loadProjects(search: search, deletedCases: false, shared: shared);
-
     isShoHUD = false;
     notifyListeners();
   }
@@ -100,14 +160,10 @@ class ProjectViewModel extends ChangeNotifier {
     bool shared = false,
   }) async {
     if (isLoading || isLoadingMore || !hasMore) return;
-
     isLoadingMore = true;
     notifyListeners();
-
     await _loadProjects(search: search, deletedCases: deletedCases, shared: shared);
   }
-
-  // --- Private Methods ---
 
   Future<void> _loadProjects({
     required String search,
@@ -115,7 +171,7 @@ class ProjectViewModel extends ChangeNotifier {
     required bool shared,
   }) async {
     try {
-      final offset = shared ? _sharedOffset : _myOffset; // ✅ offset đúng tab
+      final offset = shared ? _sharedOffset : _myOffset;
 
       final response = await _api.get(
         ApiEndpoint.projects,
@@ -130,7 +186,6 @@ class ProjectViewModel extends ChangeNotifier {
 
       final paginated = PaginatedProjects.fromJson(response.data);
 
-      // Cộng dồn vào đúng list
       if (shared) {
         sharedProjects.addAll(paginated.results);
         _sharedOffset += paginated.results.length;

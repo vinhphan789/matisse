@@ -1,3 +1,12 @@
+// ============================================================
+// FILE 3: lib/home/projects_screen.dart  (FULL — thay thế toàn bộ)
+// ✅ Thay đổi so với code cũ:
+//   1. _buildSortLabel() → tap được, hiển thị đúng tên sort
+//   2. Thêm hàm _showSortSheet()
+//   3. _buildProjectList() dùng vm.sortedProjects thay vì vm.projects
+//   4. Thêm class _SortBottomSheet ở cuối file
+// ============================================================
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_popup/flutter_popup.dart';
@@ -5,13 +14,14 @@ import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/string.dart';
 import 'package:matisse/home/left_menu.dart';
+import 'package:matisse/home/sort_project.dart'; // ✅ import sort
 import 'package:provider/provider.dart';
 
 import '../extension/app_router.dart';
 import '../login/language.dart';
 import '../login/main.dart';
 import '../login/profile.dart';
-import '../model/project_model.dart';       // 👈 ProjectModel từ API
+import '../model/project_model.dart';
 import '../popup/logout_popup.dart';
 import '../view_model/profile_view_model.dart';
 import '../view_model/project_view_model.dart';
@@ -29,17 +39,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedTab = 0;
 
-  // ViewModel — KHÔNG dùng Provider vì bạn đang dùng AnimatedBuilder
-  late ProjectViewModel vm ;
+  late ProjectViewModel vm;
   final ProfileViewModel profileVM = ProfileViewModel();
   final TextEditingController _searchController = TextEditingController();
-  final ScrollController _scrollController = ScrollController(); // 👈 Để detect scroll cuối list
+  final ScrollController _scrollController = ScrollController();
 
-  // Search query — dùng để gọi API search, không filter local nữa
   String _searchQuery = '';
-
-  // Debounce timer để không gọi API liên tục khi user đang gõ
-  // Giống debounce bên iOS
   DateTime? _lastSearchTime;
 
   @override
@@ -47,30 +52,22 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     super.initState();
     vm = context.read<ProjectViewModel>();
 
-    // Gọi API lần đầu sau khi widget build xong
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (vm.projects.isEmpty) {
         vm.fetchProjects();
       }
     });
 
-    // Lắng nghe scroll — khi gần cuối list thì load more
     _scrollController.addListener(() {
       final position = _scrollController.position;
       final isNearBottom = position.pixels >= position.maxScrollExtent - 200;
 
-
-      // 👈 Thêm log này để xem giá trị thực tế
       print('📜 scroll: pixels=${position.pixels.toInt()} max=${position.maxScrollExtent.toInt()} isNearBottom=$isNearBottom hasMore=${vm.hasMore} isLoadingMore=${vm.isLoadingMore} isLoading=${vm.isLoading}');
 
       if (isNearBottom) {
         final vm = context.read<ProjectViewModel>();
-
         if (vm.hasMore && !vm.isLoadingMore && !vm.isLoading) {
-          vm.loadMore(
-            search: _searchQuery,
-            shared: _selectedTab == 1,
-          );
+          vm.loadMore(search: _searchQuery, shared: _selectedTab == 1);
         }
       }
     });
@@ -83,32 +80,39 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     super.dispose();
   }
 
-  // Khi user đổi tab — fetch lại với param shared tương ứng
   void _onTabChanged(int index) {
-    if (_selectedTab == index) return; // ✅ Không làm gì nếu tap tab đang chọn
+    if (_selectedTab == index) return;
     setState(() => _selectedTab = index);
-    vm.fetchProjects(
-      search: _searchQuery,
-      shared: index == 1,
-    );
+    vm.fetchProjects(search: _searchQuery, shared: index == 1);
   }
 
-
-  // Khi user gõ search — gọi API sau 500ms (debounce)
   void _onSearchChanged(String value) {
     setState(() => _searchQuery = value);
     _lastSearchTime = DateTime.now();
     final capturedTime = _lastSearchTime;
-
     Future.delayed(const Duration(milliseconds: 500), () {
-      // Chỉ gọi API nếu user không gõ thêm trong 500ms
       if (capturedTime == _lastSearchTime) {
-        vm.fetchProjects(
-          search: value,
-          shared: _selectedTab == 1,
-        );
+        vm.fetchProjects(search: value, shared: _selectedTab == 1);
       }
     });
+  }
+
+  // ✅ THÊM MỚI: mở Sort bottom sheet
+  void _showSortSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: false,
+      builder: (_) => _SortBottomSheet(
+        currentSort: vm.currentSort,
+        onSortChanged: (newSort) {
+          // ✅ Gọi applySort trong ViewModel
+          // ViewModel sẽ sort list local và notifyListeners → UI tự rebuild
+          // KHÔNG fetch API, KHÔNG gọi setState ở đây
+          vm.applySort(newSort);
+        },
+      ),
+    );
   }
 
   @override
@@ -130,7 +134,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // APPBAR
+  // APPBAR — giữ nguyên
   // ============================================================
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
@@ -140,7 +144,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         icon: const Icon(Icons.menu, color: Colors.white),
         onPressed: () => _scaffoldKey.currentState?.openDrawer(),
       ),
-      title: SetupTextWidget(titleLabel: "Projects", font: FontApp.robotoMedium, textColor: Colors.white, fontSize: 24,),
+      title: SetupTextWidget(
+        titleLabel: "Projects",
+        font: FontApp.robotoMedium,
+        textColor: Colors.white,
+        fontSize: 24,
+      ),
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16),
@@ -151,19 +160,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             avatarColor: ColorApp.bruBackgroundCE93D8,
             onMyProjects: () {},
             onMyProfile: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => MyProfileScreen(profile: profileVM)),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => MyProfileScreen(profile: profileVM)));
             },
             onWebshop: () {},
             onLanguage: () {
-              Navigator.push(
-                context,
-                CupertinoPageRoute(
-                  builder: (_) => LanguagePage(),
-                ),
-              );
+              Navigator.push(context, CupertinoPageRoute(builder: (_) => LanguagePage()));
             },
             onUserGuide: () {},
             onLogout: () async {
@@ -176,7 +177,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                      (route) => false, // xoá hết các màn hình trước đó
+                      (route) => false,
                 );
               }
             },
@@ -187,7 +188,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // SEARCH BAR
+  // SEARCH BAR — giữ nguyên
   // ============================================================
   Widget _buildSearchBar() {
     return Padding(
@@ -203,7 +204,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               child: TextField(
                 controller: _searchController,
-                onChanged: _onSearchChanged, // 👈 Gọi API search thay vì filter local
+                onChanged: _onSearchChanged,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Search',
@@ -223,18 +224,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             child: ElevatedButton.icon(
               onPressed: () => showCreateProjectSheet(context),
               icon: const Icon(Icons.add, size: 18),
-              label: SetupTextWidget(
-                titleLabel: "NEW",
-                font: FontApp.robotoMedium,
-                textColor: Colors.black,
-              ),
+              label: SetupTextWidget(titleLabel: "NEW", font: FontApp.robotoMedium, textColor: Colors.black),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorApp.blueMainColor,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.xs4),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.xs4)),
               ),
             ),
           ),
@@ -244,7 +239,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // TAB BAR
+  // TAB BAR — giữ nguyên
   // ============================================================
   Widget _buildTabBar() {
     return Column(
@@ -263,7 +258,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Widget _buildTab(String label, int index) {
     final isSelected = _selectedTab == index;
     return GestureDetector(
-      onTap: () => _onTabChanged(index), // 👈 Gọi API khi đổi tab
+      onTap: () => _onTabChanged(index),
       child: Column(
         children: [
           Padding(
@@ -289,44 +284,50 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // SORT LABEL
+  // ✅ SORT LABEL — ĐÃ SỬA: tap được + hiển thị sort đang chọn
   // ============================================================
   Widget _buildSortLabel() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: const [
-          Text(
-            'Last modified at',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
+    // context.watch để widget tự rebuild khi currentSort thay đổi
+    final sort = context.watch<ProjectViewModel>().currentSort;
+
+    return GestureDetector(
+      onTap: _showSortSheet, // ✅ tap vào đây để mở sheet
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Text(
+              sort.label, // ✅ hiển thị tên sort hiện tại (VD: "Create At")
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
             ),
-          ),
-          SizedBox(width: 4),
-          Icon(Icons.arrow_upward, color: Colors.white, size: 18),
-        ],
+            const SizedBox(width: 4),
+            Icon(
+              sort.order == SortOrder.ascending ? Icons.arrow_upward : Icons.arrow_downward,
+              color: Colors.white,
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // ============================================================
-  // PROJECT LIST
+  // PROJECT LIST — ✅ ĐÃ SỬA: dùng vm.sortedProjects thay vì vm.projects
   // ============================================================
   Widget _buildProjectList() {
     final vm = context.watch<ProjectViewModel>();
 
-    // --- State 2: Có lỗi và chưa có data ---
+    // Lấy list đã được sort local
+    // ✅ sortedProjects tự sort lại mỗi khi currentSort thay đổi
+    final displayList = vm.sortedProjects;
+
     if (vm.errorMessage != null && vm.projects.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              vm.errorMessage!,
-              style: const TextStyle(color: Colors.white),
-            ),
+            Text(vm.errorMessage!, style: const TextStyle(color: Colors.white)),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () => vm.fetchProjects(shared: _selectedTab == 1),
@@ -337,42 +338,31 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       );
     }
 
-    // --- State 3: Không có data ---
-    // --- State 3: Không có data ---
-    if (vm.hasFetched && vm.projects.isEmpty && vm.errorMessage == null && !vm.isShoHUD && !vm.isLoading) {
+    if (vm.hasFetched && displayList.isEmpty && vm.errorMessage == null && !vm.isShoHUD && !vm.isLoading) {
       return RefreshIndicator(
         color: ColorApp.blueMainColor,
         onRefresh: () async {
-          await vm.refreshProjects(
-            search: _searchQuery,
-            shared: _selectedTab == 1,
-          );
+          await vm.refreshProjects(search: _searchQuery, shared: _selectedTab == 1);
         },
         child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(), // ✅ Cho phép kéo dù không có item
+          physics: const AlwaysScrollableScrollPhysics(),
           children: const [
             SizedBox(height: 200),
-            Center(
-              child: Text('No projects found', style: TextStyle(color: Colors.grey)),
-            ),
+            Center(child: Text('No projects found', style: TextStyle(color: Colors.grey))),
           ],
         ),
       );
     }
 
-    // --- State 4: Có data ---
     return RefreshIndicator(
-      color: ColorApp.blueMainColor, // 👈 Màu spinner kéo xuống
+      color: ColorApp.blueMainColor,
       onRefresh: () async {
-        // Fetch lại từ đầu — giống pull to refresh bên iOS
-        await vm.refreshProjects(
-          search: _searchQuery,
-          shared: _selectedTab == 1,
-        );
+        await vm.refreshProjects(search: _searchQuery, shared: _selectedTab == 1);
       },
       child: ListView.separated(
         controller: _scrollController,
-        itemCount: vm.projects.length + (vm.isLoadingMore ? 1 : 0),
+        // ✅ dùng displayList.length thay vì vm.projects.length
+        itemCount: displayList.length + (vm.isLoadingMore ? 1 : 0),
         separatorBuilder: (_, __) => const Divider(
           color: Color(0xFF3A3A3C),
           height: 1,
@@ -380,22 +370,23 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           endIndent: 16,
         ),
         itemBuilder: (context, index) {
-          if (index == vm.projects.length) {
+          if (index == displayList.length) {
             return const Padding(
               padding: EdgeInsets.all(16),
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          return _buildProjectCard(vm.projects[index]);
+          // ✅ dùng displayList[index] thay vì vm.projects[index]
+          return _buildProjectCard(displayList[index]);
         },
       ),
     );
   }
 
   // ============================================================
-  // PROJECT CARD — dùng ProjectModel thay vì Project sample
+  // PROJECT CARD — giữ nguyên
   // ============================================================
-  Widget _buildProjectCard(ProjectModel project) { // 👈 ProjectModel thay vì Project
+  Widget _buildProjectCard(ProjectModel project) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -409,18 +400,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               children: [
                 Text(
                   project.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 _buildInfoRow('Dentist name: ${project.dentist?.name ?? 'N/A'}'),
                 _buildInfoRow('Dentist name: ${project.dentist ?? 'N/A'}'),
-                _buildInfoRow(
-                  'Last modified at: ${_formatDate(project.updatedTs)} (${project.updatedBy ?? 'N/A'})',
-                ),
+                _buildInfoRow('Last modified at: ${_formatDate(project.updatedTs)} (${project.updatedBy ?? 'N/A'})'),
                 const SizedBox(height: 8),
                 _buildStatusBadge(project.status ?? ""),
               ],
@@ -432,9 +417,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     );
   }
 
-  // ============================================================
-  // THUMBNAIL
-  // ============================================================
   Widget _buildThumbnail(ProjectModel project) {
     return Container(
       width: 60,
@@ -442,18 +424,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF3A3A3C),
         borderRadius: BorderRadius.circular(AppSpacing.xs4),
-        // Hiển thị ảnh nếu có
         image: project.image != null && project.image!.imageUrl.isNotEmpty
-            ? DecorationImage(
-          image: NetworkImage(project.image!.imageUrl),
-          fit: BoxFit.cover,
-        )
+            ? DecorationImage(image: NetworkImage(project.image!.imageUrl), fit: BoxFit.cover)
             : null,
       ),
-      // Hiển thị icon placeholder nếu không có ảnh
-      child: project.image == null
-          ? const Icon(Icons.folder, color: Colors.grey, size: 30)
-          : null,
+      child: project.image == null ? const Icon(Icons.folder, color: Colors.grey, size: 30) : null,
     );
   }
 
@@ -461,10 +436,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     return Padding(
       padding: const EdgeInsets.only(top: 2),
       child: SetupTextWidget(
-        titleLabel: text ?? "",
+        titleLabel: text,
         font: FontApp.robotoRegular,
         fontSize: 12,
-        textColor: ColorApp.whiteMainColor.withAlpha(700), maxLine: 2,
+        textColor: ColorApp.whiteMainColor.withAlpha(700),
+        maxLine: 2,
       ),
     );
   }
@@ -473,17 +449,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     final Color badgeColor = status == 'active' ? Colors.green : Colors.grey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(20)),
       child: Text(
         status,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -505,43 +474,30 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       child: Container(
         width: 36,
         height: 36,
-        decoration: const BoxDecoration(
-          color: Color(0xFF3A3A3C),
-          shape: BoxShape.circle,
-        ),
+        decoration: const BoxDecoration(color: Color(0xFF3A3A3C), shape: BoxShape.circle),
         child: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
       ),
     );
   }
 
-  Widget _buildPopupItem(String label,
-      {required VoidCallback onTap, bool isDestructive = false}) {
+  Widget _buildPopupItem(String label, {required VoidCallback onTap, bool isDestructive = false}) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Text(
           label,
-          style: TextStyle(
-            color: isDestructive ? Colors.redAccent : Colors.white,
-            fontSize: 16,
-          ),
+          style: TextStyle(color: isDestructive ? Colors.redAccent : Colors.white, fontSize: 16),
         ),
       ),
     );
   }
 
-  // Parse date string từ API -> DateTime -> format đẹp
-  // API trả về: "2026-03-02T10:17:04.407554Z"
-  // ✅ Sau
   String _formatDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return 'N/A';
     try {
       final dt = DateTime.parse(dateStr).toLocal();
-      const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-      ];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
       final period = dt.hour >= 12 ? 'PM' : 'AM';
       final min = dt.minute.toString().padLeft(2, '0');
@@ -549,5 +505,140 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     } catch (_) {
       return dateStr;
     }
+  }
+}
+
+// ============================================================
+// ✅ SORT BOTTOM SHEET
+// Đặt ở cuối file projects_screen.dart cho tiện, không cần tạo file riêng
+// ============================================================
+
+class _SortBottomSheet extends StatefulWidget {
+  final SortProject currentSort;
+  final ValueChanged<SortProject> onSortChanged; // tương tự closure bên UIKit
+
+  const _SortBottomSheet({
+    required this.currentSort,
+    required this.onSortChanged,
+  });
+
+  @override
+  State<_SortBottomSheet> createState() => _SortBottomSheetState();
+}
+
+class _SortBottomSheetState extends State<_SortBottomSheet> {
+  // _current: sort đang được highlight trong sheet
+  late SortProject _current;
+
+  @override
+  void initState() {
+    super.initState();
+    _current = widget.currentSort; // khởi đầu từ sort hiện tại của ViewModel
+  }
+
+  void _onTapItem(SortField field) {
+    SortProject next;
+
+    if (_current.field == field) {
+      // Tap lại cùng item → toggle ascending ↔ descending
+      next = _current.copyWith(
+        order: _current.order == SortOrder.ascending
+            ? SortOrder.descending
+            : SortOrder.ascending,
+      );
+    } else {
+      // Tap item khác → chọn item mới, mặc định ascending
+      next = SortProject(field: field, order: SortOrder.ascending);
+    }
+
+    setState(() => _current = next); // cập nhật highlight trong sheet
+    widget.onSortChanged(next);      // báo về ProjectsScreen → vm.applySort(next)
+    // ✅ KHÔNG gọi Navigator.pop → sheet vẫn mở
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: ColorApp.blackMain1E1E1E,
+        // borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // sheet cao vừa đủ nội dung
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 4),
+            width: 40,
+            height: 6,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+
+          // Tiêu đề
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'Sort by',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          // Các item sort
+          ...SortField.values.map((field) => _buildSortItem(field)),
+
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortItem(SortField field) {
+    final isSelected = _current.field == field;
+    final label = SortProject(field: field).label;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _onTapItem(field),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white.withOpacity(0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          children: [
+            // Mũi tên chỉ hiện khi item đang được chọn
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+              child: isSelected
+                  ? Icon(
+                _current.order == SortOrder.ascending
+                    ? Icons.arrow_upward
+                    : Icons.arrow_downward,
+                key: ValueKey(_current.order),
+                color: Colors.white,
+                size: 20,
+              )
+                  : const SizedBox(width: 20),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
