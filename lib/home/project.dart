@@ -5,6 +5,9 @@
 //   2. Thêm hàm _showSortSheet()
 //   3. _buildProjectList() dùng vm.sortedProjects thay vì vm.projects
 //   4. Thêm class _SortBottomSheet ở cuối file
+//   5. ✅ [MỚI] _onSearchChanged: debounce 1.5 giây trước khi gọi API
+//      → Người dùng gõ liên tục sẽ không spam API,
+//        chỉ gọi API sau khi ngừng gõ đủ 1.5 giây
 // ============================================================
 
 import 'package:flutter/cupertino.dart';
@@ -45,6 +48,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   final ScrollController _scrollController = ScrollController();
 
   String _searchQuery = '';
+
+  // ✅ [MỚI] Dùng DateTime để theo dõi lần gõ cuối cùng của người dùng.
+  // Mục đích: so sánh trong Future.delayed để biết có lần gõ mới nào
+  // xen vào trong 1.5 giây hay không. Nếu không → gọi API.
   DateTime? _lastSearchTime;
 
   @override
@@ -86,18 +93,37 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     vm.fetchProjects(search: _searchQuery, shared: index == 1);
   }
 
+  // ✅ [ĐÃ SỬA] Debounce search: chờ 1.5 giây sau lần gõ cuối mới gọi API.
+  //
+  // Cơ chế hoạt động:
+  //   1. Mỗi lần người dùng gõ phím → lưu thời điểm hiện tại vào _lastSearchTime.
+  //   2. Đặt một Future chờ 1.5 giây.
+  //   3. Khi Future hoàn thành → so sánh capturedTime với _lastSearchTime:
+  //      - Bằng nhau  → không có lần gõ mới → ✅ gọi API với từ khoá hiện tại.
+  //      - Khác nhau  → đã có lần gõ mới xen vào → ❌ bỏ qua, Future kia sẽ xử lý.
+  //
+  // ✅ forceReload: true → bỏ qua guard isNotEmpty trong ViewModel,
+  //    đảm bảo API luôn được gọi với keyword mới dù list đang có data
   void _onSearchChanged(String value) {
     setState(() => _searchQuery = value);
+
     _lastSearchTime = DateTime.now();
     final capturedTime = _lastSearchTime;
-    Future.delayed(const Duration(milliseconds: 500), () {
+
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (!mounted) return;
       if (capturedTime == _lastSearchTime) {
-        vm.fetchProjects(search: value, shared: _selectedTab == 1);
+        print('🔍 Search debounce triggered — query: "$value"');
+        context.read<ProjectViewModel>().fetchProjects(
+          search: value,
+          shared: _selectedTab == 1,
+          forceReload: true, // ✅ THÊM: luôn gọi API, không bị chặn bởi guard
+        );
       }
     });
   }
 
-  // ✅ THÊM MỚI: mở Sort bottom sheet
+  // ✅ Mở Sort bottom sheet
   void _showSortSheet() {
     showModalBottomSheet(
       context: context,
@@ -204,7 +230,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
               child: TextField(
                 controller: _searchController,
-                onChanged: _onSearchChanged,
+                onChanged: _onSearchChanged, // ✅ gọi hàm debounce 1.5s
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Search',
@@ -284,7 +310,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // ✅ SORT LABEL — ĐÃ SỬA: tap được + hiển thị sort đang chọn
+  // ✅ SORT LABEL — tap được + hiển thị sort đang chọn
   // ============================================================
   Widget _buildSortLabel() {
     // context.watch để widget tự rebuild khi currentSort thay đổi
@@ -313,7 +339,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // PROJECT LIST — ✅ ĐÃ SỬA: dùng vm.sortedProjects thay vì vm.projects
+  // PROJECT LIST — dùng vm.sortedProjects thay vì vm.projects
   // ============================================================
   Widget _buildProjectList() {
     final vm = context.watch<ProjectViewModel>();
@@ -361,7 +387,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       },
       child: ListView.separated(
         controller: _scrollController,
-        // ✅ dùng displayList.length thay vì vm.projects.length
         itemCount: displayList.length + (vm.isLoadingMore ? 1 : 0),
         separatorBuilder: (_, __) => const Divider(
           color: Color(0xFF3A3A3C),
@@ -376,7 +401,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          // ✅ dùng displayList[index] thay vì vm.projects[index]
           return _buildProjectCard(displayList[index]);
         },
       ),
@@ -515,7 +539,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
 class _SortBottomSheet extends StatefulWidget {
   final SortProject currentSort;
-  final ValueChanged<SortProject> onSortChanged; // tương tự closure bên UIKit
+  final ValueChanged<SortProject> onSortChanged;
 
   const _SortBottomSheet({
     required this.currentSort,
@@ -561,10 +585,9 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: ColorApp.blackMain1E1E1E,
-        // borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // sheet cao vừa đủ nội dung
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Handle bar
           Container(
