@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/setup_widget.dart';
@@ -9,7 +10,9 @@ import 'package:matisse/images/image_app.dart';
 // ─────────────────────────────────────────────
 
 class MatisseDrawer extends StatefulWidget {
-  const MatisseDrawer({super.key});
+  final VoidCallback? onMyProjectsTap;
+
+  const MatisseDrawer({super.key, this.onMyProjectsTap});
 
   @override
   State<MatisseDrawer> createState() => _MatisseDrawerState();
@@ -21,7 +24,6 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
   bool _stainingExpanded = false;
 
   static const Color _bgColor = Color(0xFF2C2C2C);
-  static const Color _subTextColor = Color(0xFFCCCCCC);
   static const Color _dividerColor = Color(0xFF444444);
   static const Color _iconColor = Color(0xFF999999);
 
@@ -131,7 +133,10 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
           firstChild: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSubItem('My Projects', onTap: () {}),
+              _buildSubItem('My Projects', onTap: () {
+                Navigator.of(context).pop();
+                widget.onMyProjectsTap?.call();
+              }),
               _buildSubItem('Shared Projects', onTap: () {}),
               _buildSubItem('Trash', onTap: () {}),
             ],

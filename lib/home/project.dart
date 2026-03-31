@@ -145,7 +145,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const MatisseDrawer(),
+      drawer: MatisseDrawer(
+        onMyProjectsTap: () {
+          _onTabChanged(0); // ✅ switch sang tab My Projects (index 0)
+        },
+      ),
       backgroundColor: ColorApp.blackMain1E1E1E,
       appBar: _buildAppBar(),
       body: Column(
