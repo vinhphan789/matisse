@@ -26,6 +26,7 @@ import '../login/main.dart';
 import '../login/profile.dart';
 import '../model/project_model.dart';
 import '../popup/logout_popup.dart';
+import '../user_guide/user_guide.dart';
 import '../view_model/profile_view_model.dart';
 import '../view_model/project_view_model.dart';
 import 'avata_popup.dart';
@@ -145,9 +146,17 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: MatisseDrawer(
-        onMyProjectsTap: () {
-          _onTabChanged(0); // ✅ switch sang tab My Projects (index 0)
+      drawer: ProjectsLeftMenu(
+        onMyProjectsTap: (tab) {
+          switch (tab) {
+            case ProjectsLeftTap.myProjects:
+              _onTabChanged(0); // ✅ switch sang tab My Projects (index 0)
+            case ProjectsLeftTap.shareProjects:
+              _onTabChanged(1);
+            case ProjectsLeftTap.trash:
+              // TODO: Handle this case.
+              throw UnimplementedError();
+          }
         },
       ),
       backgroundColor: ColorApp.blackMain1E1E1E,
@@ -196,7 +205,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             onLanguage: () {
               Navigator.push(context, CupertinoPageRoute(builder: (_) => LanguagePage()));
             },
-            onUserGuide: () {},
+            onUserGuide: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UserGuideScreen()),
+              );
+            },
             onLogout: () async {
               final confirmed = await showDialog<bool>(
                 context: context,

@@ -9,16 +9,20 @@ import 'package:matisse/images/image_app.dart';
 // Usage: Set `drawer: const MatisseDrawer()` in your Scaffold
 // ─────────────────────────────────────────────
 
-class MatisseDrawer extends StatefulWidget {
-  final VoidCallback? onMyProjectsTap;
-
-  const MatisseDrawer({super.key, this.onMyProjectsTap});
-
-  @override
-  State<MatisseDrawer> createState() => _MatisseDrawerState();
+enum ProjectsLeftTap {
+   myProjects, shareProjects, trash
 }
 
-class _MatisseDrawerState extends State<MatisseDrawer> {
+class ProjectsLeftMenu extends StatefulWidget {
+  final Function(ProjectsLeftTap)? onMyProjectsTap;
+
+  const ProjectsLeftMenu({super.key, this.onMyProjectsTap});
+
+  @override
+  State<ProjectsLeftMenu> createState() => _ProjectsLeftMenuState();
+}
+
+class _ProjectsLeftMenuState extends State<ProjectsLeftMenu> {
   bool _projectsExpanded = false;
   bool _recipeExpanded = false;
   bool _stainingExpanded = false;
@@ -135,10 +139,14 @@ class _MatisseDrawerState extends State<MatisseDrawer> {
             children: [
               _buildSubItem('My Projects', onTap: () {
                 Navigator.of(context).pop();
-                widget.onMyProjectsTap?.call();
+                widget.onMyProjectsTap?.call(ProjectsLeftTap.myProjects);
               }),
-              _buildSubItem('Shared Projects', onTap: () {}),
-              _buildSubItem('Trash', onTap: () {}),
+              _buildSubItem('Shared Projects', onTap: () {
+                widget.onMyProjectsTap?.call(ProjectsLeftTap.shareProjects);
+              }),
+              _buildSubItem('Trash', onTap: () {
+                widget.onMyProjectsTap?.call(ProjectsLeftTap.trash);
+              }),
             ],
           ),
           secondChild: const SizedBox.shrink(),
