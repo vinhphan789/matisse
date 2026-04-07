@@ -16,7 +16,8 @@ class ApiService {
   ApiService._internal() {
     dio = Dio(
       BaseOptions(
-        baseUrl:  'https://dev-api.matisse.ai/api',
+        // baseUrl:  'https://dev-api.matisse.ai/api',
+        baseUrl:  'https://app-api.matisse.ai/api',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {

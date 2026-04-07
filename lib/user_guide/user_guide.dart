@@ -1,5 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
+import 'package:matisse/login/language.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:video_player/video_player.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UserGuideScreen
@@ -10,7 +14,8 @@ import 'package:matisse/colors/colors_app.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class UserGuideScreen extends StatefulWidget {
-  const UserGuideScreen({Key? key}) : super(key: key);
+  final bool isFromOnboarding;
+  const UserGuideScreen({Key? key, this.isFromOnboarding = false}) : super(key: key);
 
   @override
   State<UserGuideScreen> createState() => _UserGuideScreenState();
@@ -22,35 +27,42 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
 
   // Index của trang hiện tại (0 → 3)
   int _currentPage = 0;
+@override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _saveGuideSeen(); // Lưu trạng thái khi vào trang.
+  }
 
+  Future<void> _saveGuideSeen() async {
+    // Lưu has_seen_guide = true — giống UserDefaults bên UIKit
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_guide', true);
+  }
   // ── Dữ liệu 4 bước ──────────────────────────────────────────────────────────
   final List<Map<String, String>> _steps = const [
     {
       'title': 'Aesthetic Model',
       'description':
       'Copy the preparation color and adjacent teeth with Matisse ColorModel resin recipes.',
-      // TODO: thay bằng path video thật, ví dụ: 'assets/videos/aesthetic_model.mp4'
-      'videoAsset': '',
+      'videoAsset': 'assets/videos/Aesthetic_Model_Edit.mp4',
     },
     {
       'title': 'Framework',
       'description': 'Get precise framework or full monolithic crown material advice.',
-      // TODO: 'assets/videos/framework.mp4'
-      'videoAsset': '',
+      'videoAsset': 'assets/videos/Framework_Edit.mp4',
     },
     {
       'title': 'Staining Studio: Full Monolithic',
       'description':
       'Stain full monolithic crowns or correct the color of layered crowns with our recipes.',
-      // TODO: 'assets/videos/staining_studio_mono.mp4'
-      'videoAsset': '',
+      'videoAsset': 'assets/videos/Staining_Stuio_Mono_Update.mp4',
     },
     {
       'title': 'Staining Studio: Color Model',
       'description':
       'Match the color of the 3D printed model to the natural teeth with our recipes.',
-      // TODO: 'assets/videos/staining_studio_color_model.mp4'
-      'videoAsset': '',
+      'videoAsset': 'assets/videos/Staining_Studio_Color_Update.mp4',
     },
   ];
 
@@ -92,11 +104,20 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 35,),
+        leading: widget.isFromOnboarding ? null : IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           // Nút back trên AppBar: luôn thoát khỏi màn hình này (về màn trước)
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: widget.isFromOnboarding ? [
+          IconButton(
+            icon: const Icon(Icons.language, color: Colors.white),
+            onPressed: () {
+              // TODO: xử lý chọn ngôn ngữ
+              Navigator.push(context, CupertinoPageRoute(builder: (_) => LanguagePage()));
+            },
+          ),] : null,
+
         title: const Text(
           'User Guide',
           style: TextStyle(
@@ -109,8 +130,10 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
       ),
 
       // ── Body ────────────────────────────────────────────────────────────────
+      // Container bọc ngoài để set màu nền khác với AppBar
       body: Container(
-        color: ColorApp.blackMain1E1E1E,
+        // TODO: thay màu này theo design của bạn
+        color: const Color(0xFF1C1C1E), // xám tối (khác với đen của AppBar)
         child: Column(
           children: [
             // ── ① PageView: CHỈ chứa video, chiếm không gian cố định ─────────────
@@ -180,8 +203,8 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
 
             const SizedBox(height: 24),
           ],
-        ),
-      )
+        ), // end Column
+      ), // end Container
     );
   }
 }
@@ -268,7 +291,7 @@ class _GuidePageContent extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // _PhoneMockup
 //
-// Khung điện thoại giả lập chứa video (hoặc placeholder tạm).
+// Khung điện thoại giả lập chứa video.
 // ─────────────────────────────────────────────────────────────────────────────
 class _PhoneMockup extends StatelessWidget {
   final String videoAsset;
@@ -304,16 +327,83 @@ class _PhoneMockup extends StatelessWidget {
               ),
             ),
 
-            // Phần nội dung bên trong điện thoại
+            // Phần nội dung: video hoặc placeholder
             Expanded(
               child: videoAsset.isEmpty
-              // Chưa có video → hiện placeholder
                   ? _VideoPlaceholder()
-              // TODO: khi có video, thay bằng VideoPlayerWidget(assetPath: videoAsset)
-                  : _VideoPlaceholder(),
+                  : _VideoPlayerWidget(assetPath: videoAsset),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _VideoPlayerWidget
+//
+// Widget phát video từ assets.
+// - Tự động phát khi được tạo (autoplay)
+// - Lặp lại liên tục (loop)
+// - Tắt tiếng (mute) — phù hợp cho video hướng dẫn
+// - Hiện placeholder khi đang load
+// ─────────────────────────────────────────────────────────────────────────────
+class _VideoPlayerWidget extends StatefulWidget {
+  final String assetPath;
+
+  const _VideoPlayerWidget({required this.assetPath});
+
+  @override
+  State<_VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
+  // Controller quản lý việc phát video
+  late VideoPlayerController _controller;
+
+  // Trạng thái: video đã sẵn sàng phát chưa
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Khởi tạo controller với file video từ assets
+    _controller = VideoPlayerController.asset(widget.assetPath)
+      ..initialize().then((_) {
+        // Khi video đã load xong
+        setState(() {
+          _isInitialized = true;
+        });
+
+        _controller.setLooping(true);  // lặp lại liên tục
+        _controller.setVolume(0);      // tắt tiếng
+        _controller.play();            // tự động phát
+      });
+  }
+
+  // Giải phóng controller khi widget bị xóa (quan trọng, tránh memory leak)
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      // Đang load video → hiện placeholder tạm
+      return _VideoPlaceholder();
+    }
+
+    // Video đã sẵn sàng → hiện video, giữ đúng tỉ lệ khung hình
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: _controller.value.size.width,
+        height: _controller.value.size.height,
+        child: VideoPlayer(_controller),
       ),
     );
   }
@@ -416,7 +506,7 @@ class _BottomNavigation extends StatelessWidget {
                 duration: const Duration(milliseconds: 300),
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 // Chấm active: rộng hơn (pill shape) | inactive: tròn nhỏ
-                width: 8,
+                width:  8,
                 height: 8,
                 decoration: BoxDecoration(
                   color: isActive

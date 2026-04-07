@@ -20,8 +20,8 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
-  final emailCtrl = TextEditingController(text: "chungphanngoc.vn@gmail.com");
-  final passCtrl = TextEditingController(text: "An&&&999");
+  final emailCtrl = TextEditingController(text: "Marat@matisse.ai"); // chungphanngoc.vn@gmail.com
+  final passCtrl = TextEditingController(text: "Matisse-123!"); // An&&&999
   bool obscure = true;
   final emailFocus = FocusNode();
   final passFocus = FocusNode();

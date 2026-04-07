@@ -26,10 +26,18 @@ class LoginViewModel extends ChangeNotifier {
 
   // --- Config Auth0 ---
   // Giống Info.plist bên iOS — sau này chuyển vào file config riêng
-  // ✅ Đổi sang prod config — giống curl Swift đang hoạt động
-  static const String _clientId = 'LCFF8h1w7pJM1jLGuzLkdkhuv35cLER3';
-  static const String _audience = 'https://devil.eu.auth0.com/api/v2/';
-  static const String _loginBaseUrl = 'https://devil.eu.auth0.com';
+
+  // static const String _clientId = 'LCFF8h1w7pJM1jLGuzLkdkhuv35cLER3';
+  // static const String _audience = 'https://devil.eu.auth0.com/api/v2/';
+  // static const String _loginBaseUrl = 'https://devil.eu.auth0.com';
+  // static const String _realm = 'Username-Password-Authentication';
+  // static const String _scope = 'openid profile email offline_access';
+
+
+  // ✅ Đổi sang product. userName: Marat@matisse.ai    pass: Matisse-123!
+  static const String _clientId = 'hUuaFX9ML6qRUjGT2PCAI0lUHYSKLbP7';
+  static const String _audience = 'https://dev-pie59pyu.eu.auth0.com/api/v2/';
+  static const String _loginBaseUrl = 'https://dev-pie59pyu.eu.auth0.com';
   static const String _realm = 'Username-Password-Authentication';
   static const String _scope = 'openid profile email offline_access';
 
