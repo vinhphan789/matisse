@@ -8,6 +8,7 @@ import 'package:matisse/login/forgot_password.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/app_router.dart';
 
+import '../extension/url_launcher.dart';
 import '../home/project.dart';
 import '../images/image_app.dart';
 import '../view_model/login_view_model.dart';
@@ -213,7 +214,9 @@ class _SignInPageState extends State<SignInPage> {
 
               Center(
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    openLinkInBrowser('https://app.matisse.ai/try');
+                  },
                   child: const Text(
                     "Create an account",
                     style: TextStyle(color: Colors.white70),
