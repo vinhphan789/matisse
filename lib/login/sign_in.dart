@@ -1,12 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:matisse/router/app_constant.dart';
 import 'package:provider/provider.dart';          // 👈 Thêm
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/login/language.dart';
 import 'package:matisse/login/forgot_password.dart';
 import 'package:matisse/extension/setup_widget.dart';
-import 'package:matisse/extension/app_router.dart';
+import 'package:matisse/router/app_spacing.dart';
 
 import '../extension/url_launcher.dart';
 import '../home/project.dart';
@@ -215,7 +216,7 @@ class _SignInPageState extends State<SignInPage> {
               Center(
                 child: TextButton(
                   onPressed: () {
-                    openLinkInBrowser('https://app.matisse.ai/try');
+                    openLinkInBrowser(AppConstant.createNewAccount);
                   },
                   child: const Text(
                     "Create an account",

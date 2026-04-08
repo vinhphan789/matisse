@@ -5,6 +5,7 @@ import 'package:matisse/login/language.dart';
 import 'package:matisse/login/sign_in.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/url_launcher.dart';
+import 'package:matisse/router/app_constant.dart';
 import 'package:matisse/splash_screen.dart';
 import 'package:matisse/view_model/language_viewmodel.dart';
 import 'package:matisse/view_model/login_view_model.dart';
@@ -154,10 +155,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF9DD7FF),
+                          backgroundColor: ColorApp.blueMainColor,
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(4),
                           ),
                           elevation: 0,
                         ),
@@ -182,7 +183,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       height: 50,
                       child: OutlinedButton(
                         onPressed: () {
-                          openLinkInBrowser('https://app.matisse.ai/try');
+                          openLinkInBrowser(AppConstant.createNewAccount);
                           print("đã vào");
                         },
                         style: OutlinedButton.styleFrom(
@@ -191,9 +192,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             width: 1.5,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          foregroundColor: const Color(0xFF9DD7FF),
+                          foregroundColor: ColorApp.blueMainColor,
                         ),
                         child: const Text(
                           "CREATE ACCOUNT",
