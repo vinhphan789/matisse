@@ -3,9 +3,12 @@ import 'package:matisse/router/app_spacing.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/images/image_app.dart';
 import 'package:matisse/extension/setup_widget.dart';
+import 'package:provider/provider.dart';
 
-/// Màn hình "Quên mật khẩu" - Forgot Password Screen
-/// Cho phép người dùng nhập email để nhận link đặt lại mật khẩu
+import '../extension/loading.dart';
+import '../view_model/fogot_password_view_model.dart';
+import 'check_email.dart';
+
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -14,40 +17,66 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  // Controller để lấy giá trị từ ô nhập email
   final TextEditingController _emailController = TextEditingController();
-
-  // Key để quản lý và validate form
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
-  // Biến trạng thái để hiển thị loading khi đang gửi email
   bool _isLoading = false;
+
+  // ✅ Thêm biến kiểm tra email hợp lệ
+  bool _isEmailValid = false;
+
+  // ✅ Regex email
+  final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Lắng nghe thay đổi email realtime
+    _emailController.addListener(_onEmailChanged);
+  }
+
+  void _onEmailChanged() {
+    final isValid = _emailRegex.hasMatch(_emailController.text.trim());
+    if (isValid != _isEmailValid) {
+      setState(() {
+        _isEmailValid = isValid;
+      });
+    }
+  }
 
   @override
   void dispose() {
-    // Giải phóng bộ nhớ khi widget bị hủy
     _emailController.dispose();
     super.dispose();
   }
 
-  /// Hàm xử lý gửi email đặt lại mật khẩu
   Future<void> _sendResetEmail() async {
-    // Kiểm tra form hợp lệ trước khi gửi
     if (!_formKey.currentState!.validate()) return;
+    LoadingService().show();
 
-    setState(() => _isLoading = true);
+    final vm = context.read<ForgotPasswordViewModel>();
+    await vm.sendResetEmail(email: _emailController.text.trim());
 
-    // Giả lập gọi API (thay bằng logic thực tế)
-    await Future.delayed(const Duration(seconds: 2));
+    LoadingService().hide();
 
-    setState(() => _isLoading = false);
+    if (!mounted) return;
 
-    // Hiển thị thông báo thành công
-    if (mounted) {
+    if (vm.isEmailSent) {
+      // ✅ Print sau khi gửi thành công
+      print('✅ Email đặt lại mật khẩu đã gửi tới: ${_emailController.text.trim()}');
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CheckEmailScreen(
+            email: _emailController.text.trim(),
+          ),
+        ),
+      );
+    } else if (vm.errorMessage != null) {
+      print('❌ Gửi email thất bại: ${vm.errorMessage}');
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Email đặt lại mật khẩu đã được gửi!'),
-          backgroundColor: Color(0xFF8BC34A),
+        SnackBar(
+          content: Text(vm.errorMessage!),
+          backgroundColor: Colors.redAccent,
         ),
       );
     }
@@ -56,10 +85,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Nền màu tối
       backgroundColor: ColorApp.blackMain1E1E1E,
-
-      // AppBar với nút quay lại
       appBar: AppBar(
         backgroundColor: ColorApp.blackMain1E1E1E,
         elevation: 0,
@@ -67,7 +93,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
-
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -76,7 +101,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -86,43 +110,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 40),
-
-                // ---- BIỂU TƯỢNG KHÓA ----
-                Image.asset(ImageApp.keyLockIcon, width: 100, height: 100, fit: BoxFit.cover,),
-
-
+                Image.asset(ImageApp.keyLockIcon, width: 100, height: 100, fit: BoxFit.cover),
                 const SizedBox(height: 32),
-
-                // ---- TIÊU ĐỀ ----
-                SetupTextWidget(titleLabel: "Forgot password?", font: FontApp.robotoMedium,
-                  fontSize: 24, textColor: ColorApp.whiteMainColor,),
-
-                const SizedBox(height: 16),
-
-                // ---- MÔ TẢ HƯỚNG DẪN ----
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: SetupTextWidget(titleLabel: "To reset your password, enter the email address from your original account. You’ll receive a link to reset your password.",
-                    font: FontApp.robotoRegular,
-                    fontSize: 16, textColor: ColorApp.whiteMainColor, maxLine: 5, textAlign: TextAlign.center,),
-
+                SetupTextWidget(
+                  titleLabel: "Forgot password?",
+                  font: FontApp.robotoMedium,
+                  fontSize: 24,
+                  textColor: ColorApp.whiteMainColor,
                 ),
-
-                const SizedBox(height: 32),
-
-                // ---- Ô NHẬP EMAIL ----
-                _buildEmailField(),
-
-                const SizedBox(height: 32),
-
-                // ---- NÚT GỬI EMAIL ----
-                _buildSendEmailButton(),
-
                 const SizedBox(height: 16),
-
-                // ---- NÚT QUAY LẠI ĐĂNG NHẬP ----
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: SetupTextWidget(
+                    titleLabel: "To reset your password, enter the email address from your original account. You'll receive a link to reset your password.",
+                    font: FontApp.robotoRegular,
+                    fontSize: 16,
+                    textColor: ColorApp.whiteMainColor,
+                    maxLine: 5,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                _buildEmailField(),
+                const SizedBox(height: 32),
+                _buildSendEmailButton(),
+                const SizedBox(height: 16),
                 _buildBackToLoginButton(),
-
                 const SizedBox(height: 24),
               ],
             ),
@@ -132,65 +145,63 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  /// Widget ô nhập địa chỉ email với viền bo tròn
   Widget _buildEmailField() {
     return TextFormField(
       controller: _emailController,
       keyboardType: TextInputType.emailAddress,
       style: const TextStyle(color: Colors.white),
       cursorColor: const Color(0xFF76C442),
-
-      // Trang trí ô nhập liệu
       decoration: InputDecoration(
         labelText: 'Email address',
         hintText: 'Enter email address',
         labelStyle: const TextStyle(color: Colors.white54),
         hintStyle: const TextStyle(color: Colors.white38),
-        /// label luôn ở trên
         floatingLabelBehavior: FloatingLabelBehavior.always,
-        // Viền mặc định
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xs4),
           borderSide: const BorderSide(color: ColorApp.grayBorder525252Color),
         ),
-
-        // Viền khi focus (đang nhập)
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xs4),
           borderSide: const BorderSide(color: ColorApp.grayBorder525252Color),
         ),
-
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xs4),
           borderSide: const BorderSide(color: Colors.redAccent),
         ),
-
         filled: true,
         fillColor: ColorApp.blackMain1E1E1E,
       ),
-
-      // Kiểm tra hợp lệ khi người dùng submit form
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Vui lòng nhập địa chỉ email';
         }
-        // Regex kiểm tra định dạng email cơ bản
-        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-
+        if (!_emailRegex.hasMatch(value.trim())) {
+          return 'Email không hợp lệ';
+        }
         return null;
       },
     );
   }
 
-  /// Nút gửi email đặt lại mật khẩu (màu xám, chữ trắng)
   Widget _buildSendEmailButton() {
+    // ✅ Đổi màu theo trạng thái email
+    final Color bgColor = _isEmailValid
+        ? ColorApp.blueMainColor   // Xanh lá khi hợp lệ
+        : const Color(0xFF3A3A3A);  // Xám khi chưa hợp lệ
+
+    final Color textColor = _isEmailValid
+        ? Colors.white
+        : ColorApp.whiteMainColor.withAlpha(87);
+
     return SizedBox(
       width: double.infinity,
       height: 42,
       child: ElevatedButton(
-        onPressed: _isLoading ? null : _sendResetEmail,
+        // ✅ Chỉ cho bấm khi email hợp lệ và không loading
+        onPressed: (_isLoading || !_isEmailValid) ? null : _sendResetEmail,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3A3A3A), // Màu xám đậm như ảnh mẫu
+          backgroundColor: bgColor,
           disabledBackgroundColor: const Color(0xFF2A2A2A),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.xs4),
@@ -198,7 +209,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           elevation: 0,
         ),
         child: _isLoading
-        // Hiển thị vòng xoay loading khi đang gửi
             ? const SizedBox(
           width: 20,
           height: 20,
@@ -207,8 +217,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             strokeWidth: 2,
           ),
         )
-            : SetupTextWidget(titleLabel: "SEND EMAIL", font: FontApp.robotoMedium,
-          fontSize: 15, textColor: ColorApp.whiteMainColor.withAlpha(87),),
+            : SetupTextWidget(
+          titleLabel: "SEND EMAIL",
+          font: FontApp.robotoMedium,
+          fontSize: 15,
+          textColor: textColor,
+        ),
       ),
     );
   }
@@ -221,17 +235,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         onPressed: () => Navigator.of(context).pop(),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(
-            color: ColorApp.blueMainColor, // Viền xanh lam như ảnh mẫu
+            color: ColorApp.blueMainColor,
             width: 1,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.xs4),
           ),
         ),
-        child: SetupTextWidget(titleLabel: "BACK TO LOGIN", font: FontApp.robotoMedium,
-          fontSize: 15, textColor: ColorApp.blueMainColor,),
+        child: SetupTextWidget(
+          titleLabel: "BACK TO LOGIN",
+          font: FontApp.robotoMedium,
+          fontSize: 15,
+          textColor: ColorApp.blueMainColor,
+        ),
       ),
     );
   }
 }
-

@@ -5,8 +5,10 @@ import 'package:matisse/login/language.dart';
 import 'package:matisse/login/sign_in.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/url_launcher.dart';
+import 'package:matisse/model/forgot_password_model.dart';
 import 'package:matisse/router/app_constant.dart';
 import 'package:matisse/splash_screen.dart';
+import 'package:matisse/view_model/fogot_password_view_model.dart';
 import 'package:matisse/view_model/language_viewmodel.dart';
 import 'package:matisse/view_model/login_view_model.dart';
 import 'package:provider/provider.dart';
@@ -31,7 +33,8 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => LanguageViewModel()),
         ChangeNotifierProvider(create: (_) => LoginViewModel()),
-        ChangeNotifierProvider(create: (_) => ProjectViewModel())
+        ChangeNotifierProvider(create: (_) => ProjectViewModel()),
+        ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel())
       ],
       child: const MyApp(),
     ),

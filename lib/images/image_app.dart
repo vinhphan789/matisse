@@ -13,7 +13,7 @@ class ImageApp {
   static const String fileMenuIcon = '${_basePath}fileMenu-icon@3x.png';
   static const String recipeIcon = '${_basePath}recipe-icon@3x.png';
   static const String stainingIcon = '${_basePath}staining-studio-icon@3x.png';
-
+  static const String emailIcon    = '${_basePath}email-image3x.png';
 
 // key-image@3x.png
 

@@ -13,6 +13,7 @@ class ApiEndpoint {
   static const String profile       = '/v4/users/profile/';        // 👈 thêm
   static const String clearSession  = '/v4/users/session/clear_session/'; // 👈 thêm
   static const String languages     = '/masters/languages';
+  static const String forgotPassword = '/dbconnections/change_password';
 
 // Thêm endpoint mới vào đây
 }
