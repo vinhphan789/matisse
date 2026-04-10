@@ -10,7 +10,7 @@ import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/router/app_spacing.dart';
 
 import '../extension/url_launcher.dart';
-import '../home/project.dart';
+import '../home/projects.dart';
 import '../images/image_app.dart';
 import '../view_model/login_view_model.dart';
 
@@ -33,8 +33,6 @@ class _SignInPageState extends State<SignInPage> {
 
   /// Hàm gọi login — giống @IBAction trong iOS
   Future<void> _onContinuePressed() async {
-    // Ẩn bàn phím trước khi gọi API
-    // Giống view.endEditing(true) bên iOS
     FocusScope.of(context).unfocus();
 
     final vm = context.read<LoginViewModel>();
@@ -43,10 +41,44 @@ class _SignInPageState extends State<SignInPage> {
       password: passCtrl.text,
     );
 
-    // Nếu login thành công thì navigate sang ProjectsScreen
-    // Dùng mounted để tránh lỗi khi widget đã bị dispose
-    if (vm.isLoggedIn && mounted) {
-      Navigator.pushReplacement( // 👈 pushReplacement để không quay lại màn login
+    if (!mounted) return;
+
+    // ✅ Kiểm tra no subscription trước
+    if (vm.noSubscription) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2C),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text(
+            'No Active Subscription',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Your account does not have an active subscription. Please purchase a plan to continue.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                openLinkInBrowser(AppConstant.createNewAccount); // hoặc link mua gói
+              },
+              child: const Text('Buy Plan', style: TextStyle(color: Color(0xFF2196F3))),
+            ),
+          ],
+        ),
+      );
+      return; // Không navigate
+    }
+
+    // Login thành công và có subscription
+    if (vm.isLoggedIn) {
+      Navigator.pushReplacement(
         context,
         CupertinoPageRoute(builder: (_) => const ProjectsScreen()),
       );

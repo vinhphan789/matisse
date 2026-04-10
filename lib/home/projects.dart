@@ -27,6 +27,7 @@ import '../login/profile.dart';
 import '../model/project_model.dart';
 import '../popup/logout_popup.dart';
 import '../user_guide/user_guide.dart';
+import '../view_model/login_view_model.dart';
 import '../view_model/profile_view_model.dart';
 import '../view_model/project_view_model.dart';
 import 'avata_popup.dart';
@@ -218,6 +219,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 builder: (_) => const LogoutAlertDialog(),
               );
               if (confirmed == true) {
+                // ✅ Gọi logout để xóa token + reset state
+                context.read<LoginViewModel>().logout();
+
+                if (!mounted) return;
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (_) => const WelcomeScreen()),

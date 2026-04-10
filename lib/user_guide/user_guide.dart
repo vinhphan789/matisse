@@ -5,6 +5,8 @@ import 'package:matisse/login/language.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
+import '../home/projects.dart';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // UserGuideScreen
 //
@@ -27,12 +29,6 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
 
   // Index của trang hiện tại (0 → 3)
   int _currentPage = 0;
-@override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _saveGuideSeen(); // Lưu trạng thái khi vào trang.
-  }
 
   Future<void> _saveGuideSeen() async {
     // Lưu has_seen_guide = true — giống UserDefaults bên UIKit
@@ -74,13 +70,21 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
   }
 
   // ── Chuyển sang trang TIẾP THEO ─────────────────────────────────────────────
-  void _onNextPressed() {
-    // Chỉ chuyển nếu chưa phải trang cuối
+  void _onNextPressed() async {
     if (_currentPage < _steps.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       );
+    } else if (widget.isFromOnboarding) {
+      // ✅ Chỉ lưu khi user nhấn next ở trang CUỐI CÙNG
+      await _saveGuideSeen();
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          CupertinoPageRoute(builder: (_) => ProjectsScreen()),
+        );
+      }
     }
   }
 
@@ -167,6 +171,7 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
               currentPage: _currentPage,
               onNextPressed: _onNextPressed,
               onBackPressed: _onBackPressed,
+              isFromOnboarding: widget.isFromOnboarding,
             ),
 
             const SizedBox(height: 16),
@@ -222,6 +227,7 @@ class _GuidePageContent extends StatelessWidget {
   final String title;
   final String description;
   final String videoAsset;
+  final bool isFromOnboarding;
 
   // Các tham số để hiển thị navigation ngay dưới video
   final int totalPages;
@@ -237,6 +243,7 @@ class _GuidePageContent extends StatelessWidget {
     required this.currentPage,
     required this.onNextPressed,
     required this.onBackPressed,
+    this.isFromOnboarding = false
   });
 
   @override
@@ -255,6 +262,7 @@ class _GuidePageContent extends StatelessWidget {
             currentPage: currentPage,
             onNextPressed: onNextPressed,
             onBackPressed: onBackPressed,
+            isFromOnboarding: isFromOnboarding,
           ),
 
           const SizedBox(height: 16),
@@ -467,18 +475,20 @@ class _BottomNavigation extends StatelessWidget {
   final int currentPage;
   final VoidCallback onNextPressed;
   final VoidCallback onBackPressed;
+  final bool isFromOnboarding;
 
   const _BottomNavigation({
     required this.totalPages,
     required this.currentPage,
     required this.onNextPressed,
     required this.onBackPressed,
+    required this.isFromOnboarding
   });
 
   @override
   Widget build(BuildContext context) {
     final bool isFirstPage = currentPage == 0;
-    final bool isLastPage = currentPage == totalPages - 1;
+    final bool isLastPage = isFromOnboarding ? false : currentPage == totalPages - 1;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),

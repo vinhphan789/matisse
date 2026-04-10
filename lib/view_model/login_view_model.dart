@@ -13,7 +13,7 @@ import '../user_storage.dart';
 class LoginViewModel extends ChangeNotifier {
   final ApiService _api = ApiService();
 
-  // --- State ---
+  bool noSubscription = false;
 
   /// Đang loading
   bool isLoading = false;
@@ -51,6 +51,8 @@ class LoginViewModel extends ChangeNotifier {
   }) async {
     isLoading = true;
     errorMessage = null;
+    noSubscription = false;
+
     notifyListeners();
 
     try {
@@ -94,7 +96,15 @@ class LoginViewModel extends ChangeNotifier {
       await UserStorage.shared.saveProfile(profile);
       print('✅ Profile fetched');
 
+      // ✅ Kiểm tra subscription
+      if (profile.subscriptions.isEmpty) {
+        noSubscription = true;
+        isLoggedIn = false; // Không cho vào app
+        return; // Dừng lại, không set isLoggedIn = true
+      }
+
       isLoggedIn = true;
+      noSubscription = false;
       errorMessage = null;
 
     } on DioException catch (e) {
@@ -113,6 +123,8 @@ class LoginViewModel extends ChangeNotifier {
     _api.clearCredentials();
     UserStorage.shared.clearProfile();
     isLoggedIn = false;
+    noSubscription = false; // ✅ reset flag subscription
+    errorMessage = null;    // ✅ reset error
     notifyListeners();
   }
 
@@ -124,8 +136,22 @@ class LoginViewModel extends ChangeNotifier {
         return 'Kết nối quá chậm, vui lòng thử lại';
       case DioExceptionType.badResponse:
         final status = e.response?.statusCode;
-        if (status == 401) return 'Email hoặc mật khẩu không đúng';
-        if (status == 403) return 'Tài khoản không có quyền truy cập';
+        final data = e.response?.data;
+
+        // Auth0 trả 403 cho cả sai mật khẩu lẫn account bị block
+        if (status == 401 || status == 403) {
+          final error = data is Map ? data['error'] : null;
+          final description = data is Map ? data['error_description'] : null;
+
+          if (error == 'invalid_grant') {
+            return 'Email hoặc mật khẩu không đúng';
+          }
+          if (error == 'unauthorized_client' || description?.contains('blocked') == true) {
+            return 'Tài khoản đã bị khóa';
+          }
+          return 'Không có quyền truy cập';
+        }
+
         return 'Lỗi server ($status)';
       case DioExceptionType.connectionError:
         return 'Không có kết nối mạng';
