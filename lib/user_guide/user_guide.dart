@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
+import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/login/language.dart';
+import 'package:matisse/user_guide/web_shop_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
@@ -9,10 +11,6 @@ import '../home/projects.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UserGuideScreen
-//
-// Màn hình hướng dẫn sử dụng app, gồm 4 bước (steps).
-// Mỗi bước có: video (placeholder tạm), tiêu đề, mô tả.
-// User có thể vuốt ngang hoặc nhấn nút "<" / ">" để chuyển bước.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class UserGuideScreen extends StatefulWidget {
@@ -24,18 +22,14 @@ class UserGuideScreen extends StatefulWidget {
 }
 
 class _UserGuideScreenState extends State<UserGuideScreen> {
-  // Controller để điều khiển PageView (chuyển trang bằng code)
   final PageController _pageController = PageController();
-
-  // Index của trang hiện tại (0 → 3)
   int _currentPage = 0;
 
   Future<void> _saveGuideSeen() async {
-    // Lưu has_seen_guide = true — giống UserDefaults bên UIKit
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_guide', true);
   }
-  // ── Dữ liệu 4 bước ──────────────────────────────────────────────────────────
+
   final List<Map<String, String>> _steps = const [
     {
       'title': 'Aesthetic Model',
@@ -62,14 +56,12 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
     },
   ];
 
-  // ── Giải phóng controller khi widget bị xóa khỏi cây widget ────────────────
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
-  // ── Chuyển sang trang TIẾP THEO ─────────────────────────────────────────────
   void _onNextPressed() async {
     if (_currentPage < _steps.length - 1) {
       _pageController.nextPage(
@@ -77,20 +69,16 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
         curve: Curves.easeInOut,
       );
     } else if (widget.isFromOnboarding) {
-      // ✅ Chỉ lưu khi user nhấn next ở trang CUỐI CÙNG
       await _saveGuideSeen();
-
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          CupertinoPageRoute(builder: (_) => ProjectsScreen()),
+        Navigator.of(context).push(
+          CupertinoPageRoute(builder: (_) => WebShopScreen()),
         );
       }
     }
   }
 
-  // ── Chuyển về trang TRƯỚC ────────────────────────────────────────────────────
   void _onBackPressed() {
-    // Chỉ chuyển lùi nếu không phải trang đầu (index > 0)
     if (_currentPage > 0) {
       _pageController.previousPage(
         duration: const Duration(milliseconds: 350),
@@ -103,25 +91,26 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-
-      // ── AppBar ──────────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        leading: widget.isFromOnboarding ? null : IconButton(
+        leading: widget.isFromOnboarding
+            ? null
+            : IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          // Nút back trên AppBar: luôn thoát khỏi màn hình này (về màn trước)
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: widget.isFromOnboarding ? [
+        actions: widget.isFromOnboarding
+            ? [
           IconButton(
             icon: const Icon(Icons.language, color: Colors.white),
             onPressed: () {
-              // TODO: xử lý chọn ngôn ngữ
-              Navigator.push(context, CupertinoPageRoute(builder: (_) => LanguagePage()));
+              Navigator.push(
+                  context, CupertinoPageRoute(builder: (_) => LanguagePage()));
             },
-          ),] : null,
-
+          ),
+        ]
+            : null,
         title: const Text(
           'User Guide',
           style: TextStyle(
@@ -132,40 +121,38 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
         ),
         centerTitle: true,
       ),
-
-      // ── Body ────────────────────────────────────────────────────────────────
-      // Container bọc ngoài để set màu nền khác với AppBar
       body: Container(
-        // TODO: thay màu này theo design của bạn
-        color: const Color(0xFF1C1C1E), // xám tối (khác với đen của AppBar)
+        color: ColorApp.blackMain1E1E1E,
         child: Column(
           children: [
-            // ── ① PageView: CHỈ chứa video, chiếm không gian cố định ─────────────
-            // Dùng SizedBox thay vì Expanded để video không chiếm hết màn hình
-            SizedBox(
-              height: 460, // chiều cao cố định cho vùng video
+            SizedBox(height: 20,),
+            SetupTextWidget(titleLabel: "Before you start...", font: FontApp.robotoBold,
+              fontSize: 20, textColor: ColorApp.whiteMainColor,),
+            // ── ① PageView: hiển thị VIDEO trực tiếp (không còn phone mockup) ──
+            Expanded(
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: _steps.length,
                 onPageChanged: (index) {
-                  // Cập nhật state khi user vuốt tay hoặc nhấn nút
                   setState(() {
                     _currentPage = index;
                   });
                 },
                 itemBuilder: (context, index) {
-                  // Mỗi trang chỉ hiển thị phone mockup (video)
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
                     child: Center(
-                      child: _PhoneMockup(videoAsset: _steps[index]['videoAsset']!),
+                      // THAY ĐỔI: _PhoneMockup → _VideoPlayerWidget trực tiếp
+                      child: _VideoPlayerWidget(
+                        assetPath: _steps[index]['videoAsset']!,
+                      ),
                     ),
                   );
                 },
               ),
             ),
 
-            // ── ② Dot indicator + nút back/next: ĐỨNG YÊN, không nằm trong PageView
+            // ── ② Dot indicator + nút back/next ──────────────────────────────
             _BottomNavigation(
               totalPages: _steps.length,
               currentPage: _currentPage,
@@ -176,7 +163,7 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
 
             const SizedBox(height: 16),
 
-            // ── ③ Title: đứng yên, cập nhật theo _currentPage ────────────────────
+            // ── ③ Title ───────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
@@ -192,7 +179,7 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
 
             const SizedBox(height: 12),
 
-            // ── ④ Description: đứng yên, cập nhật theo _currentPage ──────────────
+            // ── ④ Description ─────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
@@ -206,30 +193,23 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 100,),
           ],
-        ), // end Column
-      ), // end Container
+        ),
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _GuidePageContent
-//
-// Layout của MỘT trang theo thứ tự từ trên xuống:
-//   ① _PhoneMockup       (video)
-//   ② _BottomNavigation  (nút back/next + dot indicator) ← ngay dưới video
-//   ③ Text               (title)
-//   ④ Text               (description)
+// _GuidePageContent (nếu vẫn dùng ở nơi khác)
+// THAY ĐỔI: _PhoneMockup → _VideoPlayerWidget trực tiếp
 // ─────────────────────────────────────────────────────────────────────────────
 class _GuidePageContent extends StatelessWidget {
   final String title;
   final String description;
   final String videoAsset;
   final bool isFromOnboarding;
-
-  // Các tham số để hiển thị navigation ngay dưới video
   final int totalPages;
   final int currentPage;
   final VoidCallback onNextPressed;
@@ -243,7 +223,7 @@ class _GuidePageContent extends StatelessWidget {
     required this.currentPage,
     required this.onNextPressed,
     required this.onBackPressed,
-    this.isFromOnboarding = false
+    this.isFromOnboarding = false,
   });
 
   @override
@@ -253,10 +233,9 @@ class _GuidePageContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ① Video / Phone Mockup
-          _PhoneMockup(videoAsset: videoAsset),
+          // THAY ĐỔI: _PhoneMockup → _VideoPlayerWidget trực tiếp
+          _VideoPlayerWidget(assetPath: videoAsset),
 
-          // ② Dot indicator + nút back/next (ngay dưới video)
           _BottomNavigation(
             totalPages: totalPages,
             currentPage: currentPage,
@@ -267,7 +246,6 @@ class _GuidePageContent extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ③ Title
           Text(
             title,
             textAlign: TextAlign.center,
@@ -280,7 +258,6 @@ class _GuidePageContent extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // ④ Description
           Text(
             description,
             textAlign: TextAlign.center,
@@ -297,65 +274,13 @@ class _GuidePageContent extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _PhoneMockup
-//
-// Khung điện thoại giả lập chứa video.
-// ─────────────────────────────────────────────────────────────────────────────
-class _PhoneMockup extends StatelessWidget {
-  final String videoAsset;
-
-  const _PhoneMockup({required this.videoAsset});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 220,
-      height: 420,
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3A3A3C), width: 3),
-        borderRadius: BorderRadius.circular(36),
-        color: const Color(0xFF1C1C1E),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(33),
-        child: Column(
-          children: [
-            // Notch giả lập ở đầu điện thoại
-            Container(
-              height: 28,
-              color: Colors.black,
-              alignment: Alignment.center,
-              child: Container(
-                width: 80,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2C2C2E),
-                  borderRadius: BorderRadius.circular(7),
-                ),
-              ),
-            ),
-
-            // Phần nội dung: video hoặc placeholder
-            Expanded(
-              child: videoAsset.isEmpty
-                  ? _VideoPlaceholder()
-                  : _VideoPlayerWidget(assetPath: videoAsset),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // _VideoPlayerWidget
 //
-// Widget phát video từ assets.
-// - Tự động phát khi được tạo (autoplay)
-// - Lặp lại liên tục (loop)
-// - Tắt tiếng (mute) — phù hợp cho video hướng dẫn
-// - Hiện placeholder khi đang load
+// THAY ĐỔI SO VỚI BẢN CŨ:
+//   - Bọc thêm Container với ClipRRect(borderRadius: 16) để bo góc video
+//   - Thêm BoxDecoration màu nền tối khi đang load
+//   - Khi chưa init: hiện CircularProgressIndicator thay vì _VideoPlaceholder
+//     (vì _VideoPlaceholder đã bị xóa cùng _PhoneMockup)
 // ─────────────────────────────────────────────────────────────────────────────
 class _VideoPlayerWidget extends StatefulWidget {
   final String assetPath;
@@ -367,31 +292,23 @@ class _VideoPlayerWidget extends StatefulWidget {
 }
 
 class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
-  // Controller quản lý việc phát video
   late VideoPlayerController _controller;
-
-  // Trạng thái: video đã sẵn sàng phát chưa
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    // Khởi tạo controller với file video từ assets
     _controller = VideoPlayerController.asset(widget.assetPath)
       ..initialize().then((_) {
-        // Khi video đã load xong
         setState(() {
           _isInitialized = true;
         });
-
-        _controller.setLooping(true);  // lặp lại liên tục
-        _controller.setVolume(0);      // tắt tiếng
-        _controller.play();            // tự động phát
+        _controller.setLooping(true);
+        _controller.setVolume(0);
+        _controller.play();
       });
   }
 
-  // Giải phóng controller khi widget bị xóa (quan trọng, tránh memory leak)
   @override
   void dispose() {
     _controller.dispose();
@@ -400,75 +317,32 @@ class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      // Đang load video → hiện placeholder tạm
-      return _VideoPlaceholder();
-    }
-
-    // Video đã sẵn sàng → hiện video, giữ đúng tỉ lệ khung hình
-    return FittedBox(
-      fit: BoxFit.cover,
-      child: SizedBox(
-        width: _controller.value.size.width,
-        height: _controller.value.size.height,
-        child: VideoPlayer(_controller),
+    // Bo góc video, thêm nền tối khi đang load
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        color: const Color(0xFF2C2C2E),
+        child: _isInitialized
+            ? AspectRatio(
+          aspectRatio: _controller.value.aspectRatio,
+          child: VideoPlayer(_controller),
+        )
+        // Đang load: hiện spinner đơn giản thay _VideoPlaceholder
+            : const SizedBox(
+          height: 300,
+          child: Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFFF9500),
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _VideoPlaceholder
-//
-// Hiển thị tạm khi chưa có video. Xóa và thay bằng VideoPlayer sau.
-// ─────────────────────────────────────────────────────────────────────────────
-class _VideoPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF2C2C2E),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.1),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: const Icon(
-              Icons.play_arrow_rounded,
-              color: Colors.white,
-              size: 36,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Video coming soon',
-            style: TextStyle(color: Color(0xFF8E8E93), fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// _BottomNavigation
-//
-// Layout: [nút back] ─── [dot indicators] ─── [nút next]
-//
-// Quy tắc hiển thị:
-//   - Nút back ("<") : ẩn khi currentPage == 0 (trang đầu tiên)
-//   - Nút next (">") : ẩn khi currentPage == totalPages - 1 (trang cuối)
-//
-// Dùng Opacity(opacity: 0) thay vì if() để layout không bị giật
-// (dot indicator luôn ở giữa dù nút có hay không).
+// _BottomNavigation — KHÔNG THAY ĐỔI GÌ
 // ─────────────────────────────────────────────────────────────────────────────
 class _BottomNavigation extends StatelessWidget {
   final int totalPages;
@@ -482,7 +356,7 @@ class _BottomNavigation extends StatelessWidget {
     required this.currentPage,
     required this.onNextPressed,
     required this.onBackPressed,
-    required this.isFromOnboarding
+    required this.isFromOnboarding,
   });
 
   @override
@@ -495,19 +369,13 @@ class _BottomNavigation extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ── Nút BACK "<" ─────────────────────────────────────────────────
-          // opacity: 0 = trong suốt (ẩn) nhưng vẫn chiếm không gian
-          // → giúp dot indicator luôn căn giữa
           Opacity(
             opacity: isFirstPage ? 0.0 : 1.0,
             child: _NavButton(
               icon: Icons.arrow_back_ios_rounded,
-              // Khi đang ẩn không cho nhấn bằng cách truyền null
               onTap: isFirstPage ? null : onBackPressed,
             ),
           ),
-
-          // ── Dot Indicator ─────────────────────────────────────────────────
           Row(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(totalPages, (index) {
@@ -515,20 +383,17 @@ class _BottomNavigation extends StatelessWidget {
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                // Chấm active: rộng hơn (pill shape) | inactive: tròn nhỏ
-                width:  8,
+                width: 8,
                 height: 8,
                 decoration: BoxDecoration(
                   color: isActive
-                      ? const Color(0xFFFF9500) // cam
-                      : const Color(0xFF3A3A3C), // xám tối
+                      ? const Color(0xFFFF9500)
+                      : const Color(0xFF3A3A3C),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
             }),
           ),
-
-          // ── Nút NEXT ">" ──────────────────────────────────────────────────
           Opacity(
             opacity: isLastPage ? 0.0 : 1.0,
             child: _NavButton(
@@ -543,11 +408,7 @@ class _BottomNavigation extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _NavButton
-//
-// Nút tròn màu xanh dùng chung cho cả back lẫn next.
-// icon: icon hiển thị bên trong
-// onTap: null = không cho nhấn (dùng khi đang ẩn)
+// _NavButton — KHÔNG THAY ĐỔI GÌ
 // ─────────────────────────────────────────────────────────────────────────────
 class _NavButton extends StatelessWidget {
   final IconData icon;

@@ -15,6 +15,13 @@ class ImageApp {
   static const String stainingIcon = '${_basePath}staining-studio-icon@3x.png';
   static const String emailIcon    = '${_basePath}email-image3x.png';
 
+
+  static const String webShopImaage           = '${_basePath}webShop-image@3x.png';
+  static const String colorModelStainsIcon    = '${_basePath}colorModelStains-image@3x.png';
+  static const String colorModelResigIcon     = '${_basePath}colorModelResig-Image@3x.png';
+  static const String matisseSiliconeIcon     = '${_basePath}matisse_silicone_pad_image@3x.png';
+  static const String matisseStainingIcon    = '${_basePath}matisse_staining_kit@3x.png';
+
 // key-image@3x.png
 
 // Sau này thêm ảnh chỉ cần thêm dòng ở đây
