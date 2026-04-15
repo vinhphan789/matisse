@@ -2,11 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/setup_widget.dart';
+import 'package:matisse/extension/url_launcher.dart';
+import 'package:matisse/router/app_constant.dart';
 import 'package:matisse/router/app_spacing.dart';
 import 'package:matisse/user_guide/web_shop.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../home/projects.dart';
+import '../images/image_app.dart';
+import '../login/language.dart';
 
 
 // TODO: thay bằng màn hình thật
@@ -23,7 +27,6 @@ class _WebShopScreenState extends State<WebShopScreen> {
   final PageController _pageController = PageController();
   WebShopStep _currentStep = WebShopStep.optishadeStyleItaliano;
 
-  static const String _purchaseUrl = 'https://your-webshop-url.com'; // TODO: thay URL thật
 
   // Danh sách theo thứ tự
   final List<WebShopStep> _steps = WebShopStep.values;
@@ -46,10 +49,7 @@ class _WebShopScreenState extends State<WebShopScreen> {
   }
 
   Future<void> _onPurchasePressed() async {
-    final uri = Uri.parse(_purchaseUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    openLinkInBrowser(WebLink.webShop);
   }
 
   @override
@@ -69,6 +69,17 @@ class _WebShopScreenState extends State<WebShopScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: Image.asset(ImageApp.languageIcon, width: 24, height: 24),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LanguagePage()),
+              );
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: Colors.white.withOpacity(0.2)),
@@ -131,7 +142,7 @@ class _WebShopScreenState extends State<WebShopScreen> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // ---- DOT INDICATOR ----
             Row(
@@ -187,7 +198,7 @@ class _WebShopScreenState extends State<WebShopScreen> {
               ),
             ),
 
-            const Spacer(),
+            SizedBox(height: 25,),
 
             // ---- NÚT YES I HAVE / NEXT TIME ----
             Padding(
@@ -203,7 +214,7 @@ class _WebShopScreenState extends State<WebShopScreen> {
               child: _buildPurchaseButton(),
             ),
 
-            const SizedBox(height: 24),
+            const Spacer()
           ],
         ),
       ),
@@ -213,7 +224,7 @@ class _WebShopScreenState extends State<WebShopScreen> {
   /// Badge "Must-Have" hoặc "Good-to-Have"
   Widget _buildBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       decoration: BoxDecoration(
         color: _currentStep.requestBadgeColor,
         borderRadius: const BorderRadius.only(

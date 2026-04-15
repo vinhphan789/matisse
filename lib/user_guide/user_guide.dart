@@ -126,8 +126,10 @@ class _UserGuideScreenState extends State<UserGuideScreen> {
         child: Column(
           children: [
             SizedBox(height: 20,),
-            SetupTextWidget(titleLabel: "Before you start...", font: FontApp.robotoBold,
-              fontSize: 20, textColor: ColorApp.whiteMainColor,),
+            if (widget.isFromOnboarding)
+              SetupTextWidget(titleLabel: "Before you start...", font: FontApp.robotoBold,
+                fontSize: 20, textColor: ColorApp.whiteMainColor,),
+
             // ── ① PageView: hiển thị VIDEO trực tiếp (không còn phone mockup) ──
             Expanded(
               child: PageView.builder(
