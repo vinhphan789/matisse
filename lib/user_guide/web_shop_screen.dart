@@ -122,7 +122,12 @@ class _WebShopScreenState extends State<WebShopScreen> {
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: _steps.length,
-                physics: const NeverScrollableScrollPhysics(), // chỉ dùng nút
+                // physics: const NeverScrollableScrollPhysics(), // chỉ dùng nút
+                onPageChanged: ( index ) {
+                  setState(() {
+                    _currentStep = _steps[index];
+                  });
+                },
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
