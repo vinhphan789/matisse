@@ -18,9 +18,9 @@ class AvatarPopupButton extends StatelessWidget {
 
   const AvatarPopupButton({
     Key? key,
-    this.userName = 'Marat',
-    this.userEmail = 'marat@matisse.ai',
-    this.avatarInitials = 'MA',
+    this.userName = '',
+    this.userEmail = '',
+    this.avatarInitials = '',
     this.avatarColor = const Color(0xFF9C27B0),
     this.onMyProjects,
     this.onMyProfile,

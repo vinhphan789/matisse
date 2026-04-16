@@ -6,6 +6,7 @@ import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/string.dart';
 import 'package:matisse/view_model/profile_view_model.dart';
 
+import '../user_storage.dart';
 import '../view_model/project_view_model.dart';
 import 'coutry.dart';
 
@@ -35,6 +36,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   // ── State ──────────────────────────────────────────────────────────────────
   String _selectedCountry = '';
   bool _acceptedEula = true;
+  String? email;
 
   @override
   void initState() {
@@ -56,6 +58,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     // Lưu country ban đầu — country trong model là int (id)
     // TODO: map country id → country name khi có danh sách
     _selectedCountry = p?.country.toString() ?? '';
+    _loadEmail();
+  }
+
+  Future<void> _loadEmail() async {
+    final value = await UserStorage.shared.getEmail();
+    setState(() {
+      email = value;
+    });
   }
 
   @override
@@ -151,7 +161,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
                     const SizedBox(height: 4),
 
-                    SetupTextWidget(titleLabel: p?.name ?? "User",
+                    SetupTextWidget(titleLabel: email ?? "Email",
                       font: FontApp.robotoMedium, fontSize: 14, maxLine: 2,
                       textColor: Colors.white,),
                   ],

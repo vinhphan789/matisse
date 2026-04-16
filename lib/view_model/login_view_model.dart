@@ -125,6 +125,7 @@ class LoginViewModel extends ChangeNotifier {
     isLoggedIn = false;
     noSubscription = false; // ✅ reset flag subscription
     errorMessage = null;    // ✅ reset error
+    UserStorage.shared.clearEmail();
     notifyListeners();
   }
 

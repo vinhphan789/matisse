@@ -12,6 +12,7 @@ import 'package:matisse/router/app_spacing.dart';
 import '../extension/url_launcher.dart';
 import '../home/projects.dart';
 import '../images/image_app.dart';
+import '../user_storage.dart';
 import '../view_model/login_view_model.dart';
 
 class SignInPage extends StatefulWidget {
@@ -78,6 +79,7 @@ class _SignInPageState extends State<SignInPage> {
 
     // Login thành công và có subscription
     if (vm.isLoggedIn) {
+      await UserStorage.shared.saveEmail(emailCtrl.text);
       Navigator.pushReplacement(
         context,
         CupertinoPageRoute(builder: (_) => const ProjectsScreen()),

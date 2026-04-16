@@ -27,6 +27,7 @@ import '../login/profile.dart';
 import '../model/project_model.dart';
 import '../popup/logout_popup.dart';
 import '../user_guide/user_guide.dart';
+import '../user_storage.dart';
 import '../view_model/login_view_model.dart';
 import '../view_model/profile_view_model.dart';
 import '../view_model/project_view_model.dart';
@@ -50,6 +51,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   final ScrollController _scrollController = ScrollController();
 
   String _searchQuery = '';
+  String? _email;
 
   // ✅ [MỚI] Dùng DateTime để theo dõi lần gõ cuối cùng của người dùng.
   // Mục đích: so sánh trong Future.delayed để biết có lần gõ mới nào
@@ -59,6 +61,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   @override
   void initState() {
     super.initState();
+    setState(() {
+      _loadEmail();
+    });
+
     vm = context.read<ProjectViewModel>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -87,6 +93,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadEmail() async {
+    final value = await UserStorage.shared.getEmail();
+    setState(() => _email = value);
   }
 
   void _onTabChanged(int index) {
@@ -195,7 +206,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           padding: const EdgeInsets.only(right: 16),
           child: AvatarPopupButton(
             userName: profileVM.profile?.name.getName() ?? "",
-            userEmail: profileVM.profile?.name ?? "",
+            userEmail:  _email ?? "Email",
             avatarInitials: profileVM.profile?.name.getAbbName() ?? "",
             avatarColor: ColorApp.bruBackgroundCE93D8,
             onMyProjects: () {},

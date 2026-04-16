@@ -16,6 +16,7 @@ class UserStorage {
   UserStorage._();
 
   static const _keyProfile = 'user_profile';
+  static const _keyEmail = 'user_email';
 
   // 🍎 Swift: UserDefaults.standard.set(try? JSONEncoder().encode(profile), forKey: "profile")
   // 🐦 Flutter: SharedPreferences không lưu được Object trực tiếp
@@ -40,5 +41,21 @@ class UserStorage {
   Future<void> clearProfile() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyProfile);
+  }
+
+  // ── Email ─────────────────────────────────────────────
+  Future<void> saveEmail(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyEmail, email);
+  }
+
+  Future<String?> getEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyEmail);
+  }
+
+  Future<void> clearEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyEmail);
   }
 }
