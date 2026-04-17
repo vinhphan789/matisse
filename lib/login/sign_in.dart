@@ -29,8 +29,17 @@ class _SignInPageState extends State<SignInPage> {
   final emailFocus = FocusNode();
   final passFocus = FocusNode();
 
-  bool get isValid =>
-      emailCtrl.text.isNotEmpty && passCtrl.text.isNotEmpty;
+  @override
+  void initState() {
+    super.initState();
+    emailFocus.addListener(() => setState(() {}));
+    passFocus.addListener(() => setState(() {}));
+  }
+
+  bool get isValid {
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
+    return emailRegex.hasMatch(emailCtrl.text.trim()) && passCtrl.text.isNotEmpty;
+  }
 
   /// Hàm gọi login — giống @IBAction trong iOS
   Future<void> _onContinuePressed() async {
@@ -178,11 +187,9 @@ class _SignInPageState extends State<SignInPage> {
 
               // --- Hiển thị lỗi từ API ---
               // Chỉ hiện khi có errorMessage
-              if (vm.errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    vm.errorMessage!,
+                  child: Text(vm.errorMessage ?? "",
                     style: const TextStyle(
                       color: Colors.redAccent,
                       fontSize: 13,
@@ -198,25 +205,36 @@ class _SignInPageState extends State<SignInPage> {
                 height: 42,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isValid
+                    backgroundColor: (isValid && !vm.isLoading)
                         ? ColorApp.blueMainColor
                         : Colors.grey.shade700,
+                    disabledBackgroundColor: ColorApp.grayBackground90CAF9Color,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppSpacing.xs4),
                     ),
                     elevation: 0,
                   ),
-                  // Disable button khi đang loading hoặc form không hợp lệ
                   onPressed: isValid && !vm.isLoading ? _onContinuePressed : null,
                   child: vm.isLoading
-                  // Hiển thị spinner khi đang gọi API
-                      ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
+                      ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: ColorApp.grayBorder525252Color,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SetupTextWidget(
+                        titleLabel: "CONTINUE",
+                        font: FontApp.robotoMedium,
+                        fontSize: 15,
+                        textColor: ColorApp.grayBorder525252Color,
+                      ),
+                    ],
                   )
                       : SetupTextWidget(
                     titleLabel: "CONTINUE",
