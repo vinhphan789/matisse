@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
+import 'package:matisse/extension/app_version.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/images/image_app.dart';
 
@@ -87,9 +88,7 @@ class _ProjectsLeftMenuState extends State<ProjectsLeftMenu> {
             Padding(
               padding: const EdgeInsets.only(bottom: 20),
               child: Center(
-                child: SetupTextWidget(titleLabel: 'Version 2.3(7)',
-                    font: FontApp.robotoRegular,
-                    fontSize: 12, textColor: Colors.white)
+                child: AppVersionWidget()
               ),
             ),
             Expanded(child: Spacer())

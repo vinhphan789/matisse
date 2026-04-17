@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:matisse/extension/app_version.dart';
 import 'package:matisse/images/image_app.dart';
 import 'package:matisse/login/language.dart';
 import 'package:matisse/login/sign_in.dart';
@@ -12,21 +13,40 @@ import 'package:matisse/view_model/fogot_password_view_model.dart';
 import 'package:matisse/view_model/language_viewmodel.dart';
 import 'package:matisse/view_model/login_view_model.dart';
 import 'package:provider/provider.dart';
+import '../api_endpoint/api_endpoint.dart';
 import '../colors/colors_app.dart';
 import 'package:flutter/services.dart';
 
 import '../extension/loading.dart';
+import '../home/projects.dart';
 import '../next_work/app_service.dart';
+import '../user_storage.dart';
 import '../view_model/project_view_model.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
-  // Gắn token cứng để test — sau này thay bằng token từ login
-  // ApiService().saveCredentials(
-  //   session: 'b2030d9b-52c2-4c79-a0ef-4c7bc792650b',
-  //   token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik16WTFNamcxUlRNek5VTkRRamcxTVRFMFJEZ3lRMEUzT0RCQlFVWkVSRU5EUlRNMk1Ua3dSZyJ9.eyJuaWNrbmFtZSI6Im1hcmF0IiwibmFtZSI6Im1hcmF0QG1hdGlzc2UuYWkiLCJwaWN0dXJlIjoiaHR0cHM6Ly9zLmdyYXZhdGFyLmNvbS9hdmF0YXIvMmIwMTJhMmExZTE2ZGM1ZWY3NDc0MmVkZGZjODNkMTg_cz00ODAmcj1wZyZkPWh0dHBzJTNBJTJGJTJGY2RuLmF1dGgwLmNvbSUyRmF2YXRhcnMlMkZtYS5wbmciLCJ1cGRhdGVkX2F0IjoiMjAyNi0wMy0wOVQwODo1OTo1MC43NzlaIiwiZW1haWwiOiJtYXJhdEBtYXRpc3NlLmFpIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImlzcyI6Imh0dHBzOi8vZGV2LXBpZTU5cHl1LmV1LmF1dGgwLmNvbS8iLCJhdWQiOiJoVXVhRlg5TUw2cVJVakdUMlBDQUkwbFVIWVNLTGJQNyIsInN1YiI6ImF1dGgwfDYxYmIxYTNhMzIyMjU0MDA2OTY1NTAzZiIsImlhdCI6MTc3MzA0Njc5MSwiZXhwIjoxNzczMDgyNzkxfQ.rbRuPvIyBDtFIKZuAXU01rvcm8jSl9uw_jFpMBrxO5inhHjc0AxBC7SbayAtAWxt3IhWTC_rEAyTol9XSlgu6eiG53Jd6d81HKx4AmEcTX_zjgQzWuB71WU4w8cTHwSzhBPwQ-fmtiTnVnKHBezlqMz9tUAKPz3GAOACTT4k_Igk698WSbwWT7HcaMdkRGSxZkvyOhBvEPJ7N4bxzVSz_bpjGLF5pttJCIp9LsHNw0Eo6k07K9Qo2u1K1byaSQcZ4gx_dofDWXRMywHMHEZVrknNvdHsGxQXBEwuEzxDUshyUZcXhTjCWJpy0vr_mQ33xz8IDYLEV5hfnmZXafBEaA"
-  // );
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await UserStorage.shared.loadToken();
+  await UserStorage.shared.loadEmail();
+
+  final isValid = UserStorage.shared.isTokenValid();
+
+  if (isValid) {
+    ApiService().saveCredentials(
+      token: UserStorage.shared.token!,
+      session: UserStorage.shared.sessionId ?? '',
+    );
+
+    // 👈 Clear session cũ trước khi dùng
+    try {
+      await ApiService().get(ApiEndpoint.clearSession);
+      print('✅ Session cleared on restore');
+    } catch (e) {
+      print('⚠️ Clear session failed: $e');
+    }
+  }
 
   runApp(
     MultiProvider(
@@ -34,15 +54,15 @@ void main() {
         ChangeNotifierProvider(create: (_) => LanguageViewModel()),
         ChangeNotifierProvider(create: (_) => LoginViewModel()),
         ChangeNotifierProvider(create: (_) => ProjectViewModel()),
-        ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel())
+        ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel()),
       ],
-      child: const MyApp(),
+      child: MyApp(isLoggedIn: isValid),
     ),
   );
 }
-
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({required this.isLoggedIn, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -50,18 +70,17 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'RobotoCustom'),
 
-      // 👇 DÙNG builder thay vì home: Stack
       builder: (context, child) {
         return Stack(
           fit: StackFit.expand,
           children: [
-            child!, // 👈 toàn bộ navigator ở đây
-            GlobalLoadingOverlay(), // 👈 luôn nằm trên cùng
+            child!,
+            GlobalLoadingOverlay(),
           ],
         );
       },
 
-      home: const SplashScreen(), // 👈 màn hình đầu tiên
+      home: isLoggedIn ? const ProjectsScreen() : const SplashScreen(),
     );
   }
 }
@@ -213,14 +232,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   const SizedBox(height: 10),
 
                   /// 🔢 VERSION TEXT
-                  SetupTextWidget(
-                    titleLabel: "Version 2.2(1)",
-                    textColor: ColorApp.whiteMainColor,
-                    fontSize: 12,
-                    font: FontApp.robotoRegular,
-                  ),
+                  AppVersionWidget(),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 220),
                 ],
               ),
             ),

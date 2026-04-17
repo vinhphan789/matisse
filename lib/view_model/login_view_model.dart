@@ -73,11 +73,12 @@ class LoginViewModel extends ChangeNotifier {
       final loginData = LoginModel.fromJson(response.data);
       final sessionId = const Uuid().v4().toLowerCase();
 
-      // Lưu credentials trước
+      // // Lưu credentials trước
       _api.saveCredentials(
         token: loginData.idToken,
         session: sessionId,
       );
+      await UserStorage.shared.saveToken(loginData.idToken, sessionId);
 
       // ✅ Bước 2: Clear session CŨ trước
       try {
