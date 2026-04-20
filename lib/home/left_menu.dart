@@ -58,11 +58,21 @@ class _ProjectsLeftMenuState extends State<ProjectsLeftMenu> {
               isExpanded: _recipeExpanded,
               onTap: () => setState(() => _recipeExpanded = !_recipeExpanded),
               children: [
-                _buildSubItem('Aesthetic Model', onTap: () {}),
-                _buildSubItem('Framework', onTap: () {}),
-                _buildSubItem('Dentin', onTap: () {}),
-                _buildSubItem('Enamel', onTap: () {}),
-                _buildSubItem('ShadeGuide AI', onTap: () {}),
+                _buildSubItem('Aesthetic Model', onTap: () {
+                  Navigator.of(context).pop();
+                }),
+                _buildSubItem('Framework', onTap: () {
+                  Navigator.of(context).pop();
+                }),
+                _buildSubItem('Dentin', onTap: () {
+                  Navigator.of(context).pop();
+                }),
+                _buildSubItem('Enamel', onTap: () {
+                  Navigator.of(context).pop();
+                }),
+                _buildSubItem('ShadeGuide AI', onTap: () {
+                  Navigator.of(context).pop();
+                }),
               ], assetPath: ImageApp.recipeIcon,
             ),
 
@@ -75,8 +85,12 @@ class _ProjectsLeftMenuState extends State<ProjectsLeftMenu> {
               onTap: () =>
                   setState(() => _stainingExpanded = !_stainingExpanded),
               children: [
-                _buildSubItem('Monolithic/ Color Corrections', onTap: () {}),
-                _buildSubItem('ColorModel/ Stump Shade', onTap: () {}),
+                _buildSubItem('Monolithic/ Color Corrections', onTap: () {
+                  Navigator.of(context).pop();
+                }),
+                _buildSubItem('ColorModel/ Stump Shade', onTap: () {
+                  Navigator.of(context).pop();
+                }),
               ], assetPath: ImageApp.stainingIcon,
             ),
 
@@ -141,9 +155,11 @@ class _ProjectsLeftMenuState extends State<ProjectsLeftMenu> {
                 widget.onMyProjectsTap?.call(ProjectsLeftTap.myProjects);
               }),
               _buildSubItem('Shared Projects', onTap: () {
+                Navigator.of(context).pop();
                 widget.onMyProjectsTap?.call(ProjectsLeftTap.shareProjects);
               }),
               _buildSubItem('Trash', onTap: () {
+                Navigator.of(context).pop();
                 widget.onMyProjectsTap?.call(ProjectsLeftTap.trash);
               }),
             ],
