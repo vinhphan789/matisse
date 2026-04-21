@@ -22,6 +22,7 @@ import '../home/projects.dart';
 import '../next_work/app_service.dart';
 import '../user_storage.dart';
 import '../view_model/project_view_model.dart';
+import '../view_model/trash_view_model.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -55,6 +56,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LoginViewModel()),
         ChangeNotifierProvider(create: (_) => ProjectViewModel()),
         ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel()),
+        ChangeNotifierProvider(create: (_) => TrashViewModel()),
       ],
       child: MyApp(isLoggedIn: isValid),
     ),

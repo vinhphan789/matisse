@@ -1,24 +1,21 @@
 // ============================================================
-// FILE 3: lib/home/projects_screen.dart  (FULL — thay thế toàn bộ)
-// ✅ Thay đổi so với code cũ:
-//   1. _buildSortLabel() → tap được, hiển thị đúng tên sort
-//   2. Thêm hàm _showSortSheet()
-//   3. _buildProjectList() dùng vm.sortedProjects thay vì vm.projects
-//   4. Thêm class _SortBottomSheet ở cuối file
-//   5. ✅ [MỚI] _onSearchChanged: debounce 1.5 giây trước khi gọi API
-//      → Người dùng gõ liên tục sẽ không spam API,
-//        chỉ gọi API sau khi ngừng gõ đủ 1.5 giây
+// FILE 2: lib/home/trash_screen.dart
+//
+// UI cho màn hình Trash (thùng rác).
+// Structure giống ProjectsScreen nhưng:
+//   ✅ KHÔNG có tab bar (MY PROJECTS / SHARED)
+//   ✅ KHÔNG có nút NEW
+//   ✅ Popup menu có Restore + Delete Permanently (thay vì Share/Duplicate...)
+//   ✅ Dùng TrashViewModel thay vì ProjectViewModel
+//   ✅ Reuse SortProject, SortBottomSheet pattern giống projects_screen
 // ============================================================
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_popup/flutter_popup.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/setup_widget.dart';
 import 'package:matisse/extension/string.dart';
-import 'package:matisse/home/left_menu.dart';
-import 'package:matisse/home/sort_project.dart'; // ✅ import sort
-import 'package:matisse/home/trash_screen.dart';
+import 'package:matisse/home/sort_project.dart';
 import 'package:provider/provider.dart';
 
 import '../router/app_spacing.dart';
@@ -31,22 +28,22 @@ import '../user_guide/user_guide.dart';
 import '../user_storage.dart';
 import '../view_model/login_view_model.dart';
 import '../view_model/profile_view_model.dart';
-import '../view_model/project_view_model.dart';
+import '../view_model/trash_view_model.dart'; // ✅ Import TrashViewModel
 import 'avata_popup.dart';
-import 'create_new_project.dart';
 
-class ProjectsScreen extends StatefulWidget {
-  const ProjectsScreen({super.key});
+class TrashScreen extends StatefulWidget {
+  const TrashScreen({super.key});
 
   @override
-  State<ProjectsScreen> createState() => _ProjectsScreenState();
+  State<TrashScreen> createState() => _TrashScreenState();
 }
 
-class _ProjectsScreenState extends State<ProjectsScreen> {
+class _TrashScreenState extends State<TrashScreen> {
+  // ─────────────────────────────────────────────
+  // Controllers & state
+  // ─────────────────────────────────────────────
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _selectedTab = 0;
-
-  late ProjectViewModel vm;
+  late TrashViewModel vm; // ViewModel riêng cho Trash
   final ProfileViewModel profileVM = ProfileViewModel();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -54,36 +51,40 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   String _searchQuery = '';
   String? _email;
 
-  // ✅ [MỚI] Dùng DateTime để theo dõi lần gõ cuối cùng của người dùng.
-  // Mục đích: so sánh trong Future.delayed để biết có lần gõ mới nào
-  // xen vào trong 1.5 giây hay không. Nếu không → gọi API.
+  // Debounce search — giống projects_screen
   DateTime? _lastSearchTime;
+
+  // ============================================================
+  // LIFECYCLE
+  // ============================================================
 
   @override
   void initState() {
     super.initState();
-    setState(() {
-      _loadEmail();
-    });
+    _loadEmail();
 
-    vm = context.read<ProjectViewModel>();
+    // ✅ Lấy TrashViewModel từ Provider
+    vm = context.read<TrashViewModel>();
 
+    // Fetch data lần đầu khi màn hình mở
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (vm.projects.isEmpty) {
-        vm.fetchProjects();
+      if (vm.trashedProjects.isEmpty) {
+        vm.fetchTrashedProjects();
       }
     });
 
+    // ─────────────────────────────────────────────
+    // Infinite scroll: theo dõi vị trí scroll
+    // Khi gần cuối list → gọi loadMore()
+    // ─────────────────────────────────────────────
     _scrollController.addListener(() {
       final position = _scrollController.position;
       final isNearBottom = position.pixels >= position.maxScrollExtent - 200;
 
-      print('📜 scroll: pixels=${position.pixels.toInt()} max=${position.maxScrollExtent.toInt()} isNearBottom=$isNearBottom hasMore=${vm.hasMore} isLoadingMore=${vm.isLoadingMore} isLoading=${vm.isLoading}');
-
       if (isNearBottom) {
-        final vm = context.read<ProjectViewModel>();
+        final vm = context.read<TrashViewModel>();
         if (vm.hasMore && !vm.isLoadingMore && !vm.isLoading) {
-          vm.loadMore(search: _searchQuery, shared: _selectedTab == 1);
+          vm.loadMore(search: _searchQuery);
         }
       }
     });
@@ -96,28 +97,19 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     super.dispose();
   }
 
+  // ============================================================
+  // HELPERS
+  // ============================================================
+
   Future<void> _loadEmail() async {
     final value = await UserStorage.shared.getEmail();
     setState(() => _email = value);
   }
 
-  void _onTabChanged(int index) {
-    if (_selectedTab == index) return;
-    setState(() => _selectedTab = index);
-    vm.fetchProjects(search: _searchQuery, shared: index == 1);
-  }
-
-  // ✅ [ĐÃ SỬA] Debounce search: chờ 1.5 giây sau lần gõ cuối mới gọi API.
-  //
-  // Cơ chế hoạt động:
-  //   1. Mỗi lần người dùng gõ phím → lưu thời điểm hiện tại vào _lastSearchTime.
-  //   2. Đặt một Future chờ 1.5 giây.
-  //   3. Khi Future hoàn thành → so sánh capturedTime với _lastSearchTime:
-  //      - Bằng nhau  → không có lần gõ mới → ✅ gọi API với từ khoá hiện tại.
-  //      - Khác nhau  → đã có lần gõ mới xen vào → ❌ bỏ qua, Future kia sẽ xử lý.
-  //
-  // ✅ forceReload: true → bỏ qua guard isNotEmpty trong ViewModel,
-  //    đảm bảo API luôn được gọi với keyword mới dù list đang có data
+  // ─────────────────────────────────────────────
+  // Debounce search: chờ 800ms sau lần gõ cuối mới gọi API
+  // Tránh spam API khi user gõ liên tục
+  // ─────────────────────────────────────────────
   void _onSearchChanged(String value) {
     setState(() => _searchQuery = value);
 
@@ -127,97 +119,169 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
       if (capturedTime == _lastSearchTime) {
-        print('🔍 Search debounce triggered — query: "$value"');
-        context.read<ProjectViewModel>().fetchProjects(
+        // Đủ 800ms không có lần gõ mới → gọi API
+        context.read<TrashViewModel>().fetchTrashedProjects(
           search: value,
-          shared: _selectedTab == 1,
-          forceReload: true, // ✅ THÊM: luôn gọi API, không bị chặn bởi guard
+          forceReload: true,
         );
       }
     });
   }
 
-  // ✅ Mở Sort bottom sheet
+  // Mở Sort bottom sheet — reuse _TrashSortBottomSheet bên dưới
   void _showSortSheet() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: false,
-      builder: (_) => _SortBottomSheet(
+      builder: (_) => _TrashSortBottomSheet(
         currentSort: vm.currentSort,
         onSortChanged: (newSort) {
-          // ✅ Gọi applySort trong ViewModel
-          // ViewModel sẽ sort list local và notifyListeners → UI tự rebuild
-          // KHÔNG fetch API, KHÔNG gọi setState ở đây
+          // Sort local, không gọi API
           vm.applySort(newSort);
         },
       ),
     );
   }
 
+  // ─────────────────────────────────────────────
+  // Restore project → gọi VM → hiển thị kết quả bằng SnackBar
+  // ─────────────────────────────────────────────
+  Future<void> _onRestore(ProjectModel project) async {
+    Navigator.pop(context); // Đóng popup menu nếu đang mở
+    try {
+      await vm.restoreProject(project);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ "${project.name}" đã được khôi phục.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Khôi phục thất bại. Vui lòng thử lại.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Permanent delete → hỏi xác nhận trước khi xoá
+  // ─────────────────────────────────────────────
+  Future<void> _onPermanentDelete(ProjectModel project) async {
+    Navigator.pop(context); // Đóng popup menu
+
+    // Hiện dialog xác nhận — tránh xoá nhầm
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.6),
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF2C2C2E),
+        title: const Text(
+          'Xoá vĩnh viễn?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          '"${project.name}" sẽ bị xoá vĩnh viễn và không thể khôi phục.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Huỷ', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Xoá', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await vm.permanentlyDelete(project);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🗑 "${project.name}" đã bị xoá vĩnh viễn.'),
+          backgroundColor: Colors.grey[800],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('❌ Xoá thất bại. Vui lòng thử lại.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: ProjectsLeftMenu(
-        onMyProjectsTap: (tab) {
-          switch (tab) {
-            case ProjectsLeftTap.myProjects:
-              _onTabChanged(0); // ✅ switch sang tab My Projects (index 0)
-            case ProjectsLeftTap.shareProjects:
-              _onTabChanged(1);
-            case ProjectsLeftTap.trash:
-              // TODO: Handle this case.
-              _scaffoldKey.currentState?.closeDrawer(); // đóng drawer
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TrashScreen()),
-              );
-              break;
-          }
-        },
-      ),
       backgroundColor: ColorApp.blackMain1E1E1E,
       appBar: _buildAppBar(),
       body: Column(
         children: [
-          _buildSearchBar(),
-          _buildTabBar(),
-          _buildSortLabel(),
-          Expanded(child: _buildProjectList()),
+          _buildSearchBar(),  // ① Search bar (không có nút NEW)
+          _buildSortLabel(),  // ② Sort label (tap để đổi sort)
+          Expanded(
+            child: _buildProjectList(), // ③ Danh sách project
+          ),
         ],
+        // ✅ Không có _buildTabBar() vì Trash không có tab MY/SHARED
       ),
     );
   }
 
   // ============================================================
-  // APPBAR — giữ nguyên
+  // APPBAR
+  // Title là "Trash" thay vì "Projects"
+  // Không có nút NEW
   // ============================================================
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: const Color(0xFF1E1E1E),
       elevation: 0,
+      // Back button (vì TrashScreen được push từ màn hình khác)
       leading: IconButton(
-        icon: const Icon(Icons.menu, color: Colors.white),
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Navigator.pop(context),
       ),
       title: SetupTextWidget(
-        titleLabel: "Projects",
+        titleLabel: "Trash",
         font: FontApp.robotoMedium,
         textColor: Colors.white,
         fontSize: 24,
       ),
       actions: [
+        // Avatar popup — giữ nguyên như ProjectsScreen
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: AvatarPopupButton(
             userName: profileVM.profile?.name.getName() ?? "",
-            userEmail:  _email ?? "Email",
+            userEmail: _email ?? "Email",
             avatarInitials: profileVM.profile?.name.getAbbName() ?? "",
             avatarColor: ColorApp.bruBackgroundCE93D8,
             onMyProjects: () {},
             onMyProfile: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => MyProfileScreen(profile: profileVM)));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => MyProfileScreen(profile: profileVM)),
+              );
             },
             onWebshop: () {},
             onLanguage: () {
@@ -236,9 +300,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 builder: (_) => const LogoutAlertDialog(),
               );
               if (confirmed == true) {
-                // ✅ Gọi logout để xóa token + reset state
                 context.read<LoginViewModel>().logout();
-
                 if (!mounted) return;
                 Navigator.pushAndRemoveUntil(
                   context,
@@ -254,121 +316,63 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // SEARCH BAR — giữ nguyên
+  // SEARCH BAR
+  // ✅ Không có nút NEW — chỉ có ô tìm kiếm
   // ============================================================
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2C2C2E),
-                borderRadius: BorderRadius.circular(AppSpacing.xs4),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged, // ✅ gọi hàm debounce 1.5s
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Search',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey, size: 24),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 8),
-                  isDense: true,
-                  isCollapsed: true,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            height: 40,
-            child: ElevatedButton.icon(
-              onPressed: () => showCreateProjectSheet(context),
-              icon: const Icon(Icons.add, size: 18),
-              label: SetupTextWidget(titleLabel: "NEW", font: FontApp.robotoMedium, textColor: Colors.black),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ColorApp.blueMainColor,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.xs4)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // TAB BAR — giữ nguyên
-  // ============================================================
-  Widget _buildTabBar() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: _buildTab('MY PROJECTS', 0)),
-            Expanded(child: _buildTab('SHARED', 1)),
-          ],
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2C2C2E),
+          borderRadius: BorderRadius.circular(AppSpacing.xs4),
         ),
-        Container(height: 1, color: const Color(0xFF3A3A3C)),
-      ],
-    );
-  }
-
-  Widget _buildTab(String label, int index) {
-    final isSelected = _selectedTab == index;
-    return GestureDetector(
-      onTap: () => _onTabChanged(index),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isSelected ? ColorApp.blueMainColor : Colors.white.withAlpha(90),
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: _onSearchChanged, // ✅ debounce 800ms
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Search',
+            hintStyle: TextStyle(color: Colors.grey),
+            prefixIcon: Icon(Icons.search, color: Colors.grey, size: 24),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(vertical: 8),
+            isDense: true,
+            isCollapsed: true,
           ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: 2,
-            color: isSelected ? ColorApp.blueMainColor : Colors.transparent,
-          ),
-        ],
+        ),
       ),
     );
   }
 
   // ============================================================
-  // ✅ SORT LABEL — tap được + hiển thị sort đang chọn
+  // SORT LABEL
+  // Tap vào để mở bottom sheet chọn sort
+  // context.watch → tự rebuild khi currentSort thay đổi
   // ============================================================
   Widget _buildSortLabel() {
-    // context.watch để widget tự rebuild khi currentSort thay đổi
-    final sort = context.watch<ProjectViewModel>().currentSort;
+    final sort = context.watch<TrashViewModel>().currentSort;
 
     return GestureDetector(
-      onTap: _showSortSheet, // ✅ tap vào đây để mở sheet
+      onTap: _showSortSheet,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             Text(
-              sort.label, // ✅ hiển thị tên sort hiện tại (VD: "Create At")
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+              sort.label, // VD: "Last modified at", "Name", "Created at"
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
             ),
             const SizedBox(width: 4),
             Icon(
-              sort.order == SortOrder.ascending ? Icons.arrow_upward : Icons.arrow_downward,
+              sort.order == SortOrder.ascending
+                  ? Icons.arrow_upward
+                  : Icons.arrow_downward,
               color: Colors.white,
               size: 18,
             ),
@@ -379,16 +383,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // PROJECT LIST — dùng vm.sortedProjects thay vì vm.projects
+  // PROJECT LIST
+  // Dùng vm.sortedProjects thay vì vm.trashedProjects
+  // → List luôn được sort đúng theo currentSort
   // ============================================================
   Widget _buildProjectList() {
-    final vm = context.watch<ProjectViewModel>();
+    final vm = context.watch<TrashViewModel>();
+    final displayList = vm.sortedProjects; // ✅ Luôn dùng sorted list
 
-    // Lấy list đã được sort local
-    // ✅ sortedProjects tự sort lại mỗi khi currentSort thay đổi
-    final displayList = vm.sortedProjects;
-
-    if (vm.errorMessage != null && vm.projects.isEmpty) {
+    // ── Trạng thái lỗi ──
+    if (vm.errorMessage != null && vm.trashedProjects.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -396,7 +400,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             Text(vm.errorMessage!, style: const TextStyle(color: Colors.white)),
             const SizedBox(height: 12),
             ElevatedButton(
-              onPressed: () => vm.fetchProjects(shared: _selectedTab == 1),
+              onPressed: () => vm.fetchTrashedProjects(),
               child: const Text('Thử lại'),
             ),
           ],
@@ -404,12 +408,18 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       );
     }
 
-    if (vm.hasFetched && displayList.isEmpty && vm.errorMessage == null && !vm.isShoHUD && !vm.isLoading) {
+    // ── Trạng thái loading lần đầu ──
+    if (vm.isLoading && displayList.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: ColorApp.blueMainColor),
+      );
+    }
+
+    // ── Trạng thái rỗng sau khi fetch ──
+    if (vm.hasFetched && displayList.isEmpty && vm.errorMessage == null) {
       return RefreshIndicator(
         color: ColorApp.blueMainColor,
-        onRefresh: () async {
-          await vm.refreshProjects(search: _searchQuery, shared: _selectedTab == 1);
-        },
+        onRefresh: () => vm.refreshProjects(search: _searchQuery),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
@@ -424,21 +434,21 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: const Color(0xFF3A3A3C), width: 1),
                 ),
-                child: Row(
+                child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.info_outline_rounded,
+                    Icon(
+                      Icons.delete_outline_rounded,
                       color: ColorApp.blueMainColor,
                       size: 28,
                     ),
-                    const SizedBox(width: 14),
-                    const Column(
+                    SizedBox(width: 14),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Oops!',
+                          'Thùng rác trống!',
                           style: TextStyle(
                             color: ColorApp.blueMainColor,
                             fontSize: 16,
@@ -447,11 +457,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'No result found.',
+                          'Không có project nào trong thùng rác.',
                           style: TextStyle(
                             color: ColorApp.blueMainColor,
                             fontSize: 14,
-                            fontWeight: FontWeight.normal,
                           ),
                         ),
                       ],
@@ -465,13 +474,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       );
     }
 
+    // ── Danh sách chính ──
     return RefreshIndicator(
       color: ColorApp.blueMainColor,
-      onRefresh: () async {
-        await vm.refreshProjects(search: _searchQuery, shared: _selectedTab == 1);
-      },
+      onRefresh: () => vm.refreshProjects(search: _searchQuery),
       child: ListView.separated(
         controller: _scrollController,
+        // +1 để hiện loading spinner ở cuối khi load more
         itemCount: displayList.length + (vm.isLoadingMore ? 1 : 0),
         separatorBuilder: (_, __) => const Divider(
           color: Color(0xFF3A3A3C),
@@ -480,6 +489,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           endIndent: 16,
         ),
         itemBuilder: (context, index) {
+          // Item cuối cùng là loading spinner (khi đang load more)
           if (index == displayList.length) {
             return const Padding(
               padding: EdgeInsets.all(16),
@@ -493,7 +503,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   // ============================================================
-  // PROJECT CARD — giữ nguyên
+  // PROJECT CARD
+  // Giống ProjectsScreen nhưng popup menu có Restore + Delete Permanently
   // ============================================================
   Widget _buildProjectCard(ProjectModel project) {
     return Padding(
@@ -507,19 +518,28 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Tên project
                 Text(
                   project.name,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 4),
+                _buildInfoRow('Created at: ${_formatDate(project.createdTs)}'),
                 _buildInfoRow('Dentist name: ${project.dentist?.name ?? 'N/A'}'),
-                _buildInfoRow('Dentist name: ${project.dentist ?? 'N/A'}'),
-                _buildInfoRow('Last modified at: ${_formatDate(project.updatedTs)} (${project.updatedBy ?? 'N/A'})'),
+                _buildInfoRow('Shared with: N/A'), // TODO: thay bằng data thật
+                _buildInfoRow(
+                  'Last modified at: ${_formatDate(project.updatedTs)} (${project.updatedBy ?? 'N/A'})',
+                ),
                 const SizedBox(height: 8),
                 _buildStatusBadge(project.status ?? ""),
               ],
             ),
           ),
+          // ✅ Popup menu với 2 action: Restore và Delete Permanently
           _buildPopupMenu(project),
         ],
       ),
@@ -534,10 +554,15 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         color: const Color(0xFF3A3A3C),
         borderRadius: BorderRadius.circular(AppSpacing.xs4),
         image: project.image != null && project.image!.imageUrl.isNotEmpty
-            ? DecorationImage(image: NetworkImage(project.image!.imageUrl), fit: BoxFit.cover)
+            ? DecorationImage(
+          image: NetworkImage(project.image!.imageUrl),
+          fit: BoxFit.cover,
+        )
             : null,
       ),
-      child: project.image == null ? const Icon(Icons.folder, color: Colors.grey, size: 30) : null,
+      child: project.image == null
+          ? const Icon(Icons.folder, color: Colors.grey, size: 30)
+          : null,
     );
   }
 
@@ -558,50 +583,81 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     final Color badgeColor = status == 'active' ? Colors.green : Colors.grey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-      decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Text(
         status,
-        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-      ),
-    );
-  }
-
-  Widget _buildPopupMenu(ProjectModel project) {
-    return CustomPopup(
-      arrowColor: ColorApp.greyBackground2C2C2E,
-      backgroundColor: ColorApp.greyBackground2C2C2E,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPopupItem('Share', onTap: () {}),
-          _buildPopupItem('Duplicate', onTap: () {}),
-          _buildPopupItem('Manage', onTap: () {}),
-          _buildPopupItem('Delete', onTap: () {}, isDestructive: true),
-        ],
-      ),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: const BoxDecoration(color: Color(0xFF3A3A3C), shape: BoxShape.circle),
-        child: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
-      ),
-    );
-  }
-
-  Widget _buildPopupItem(String label, {required VoidCallback onTap, bool isDestructive = false}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Text(
-          label,
-          style: TextStyle(color: isDestructive ? Colors.redAccent : Colors.white, fontSize: 16),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 
+  // ─────────────────────────────────────────────
+  // ✅ Popup menu KHÁC với ProjectsScreen:
+  //    - "Restore"           → khôi phục project
+  //    - "Delete Permanently" → xoá vĩnh viễn (màu đỏ)
+  // ─────────────────────────────────────────────
+  Widget _buildPopupMenu(ProjectModel project) {
+    return PopupMenuButton<String>(
+      color: const Color(0xFF2C2C2E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      icon: Container(
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: Color(0xFF3A3A3C),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
+      ),
+      onSelected: (value) {
+        // Xử lý action từ popup menu
+        switch (value) {
+          case 'restore':
+            _onRestore(project);
+            break;
+          case 'delete':
+            _onPermanentDelete(project);
+            break;
+        }
+      },
+      itemBuilder: (_) => [
+        // Action 1: Restore
+        const PopupMenuItem<String>(
+          value: 'restore',
+          child: Row(
+            children: [
+              Icon(Icons.restore, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Text('Restore', style: TextStyle(color: Colors.white, fontSize: 16)),
+            ],
+          ),
+        ),
+        // Action 2: Delete Permanently (màu đỏ để cảnh báo)
+        const PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_forever, color: Colors.redAccent, size: 20),
+              SizedBox(width: 12),
+              Text(
+                'Delete Permanently',
+                style: TextStyle(color: Colors.redAccent, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Format ngày giờ từ ISO string → "Mar 2, 2026 at 5:17 PM"
   String _formatDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return 'N/A';
     try {
@@ -618,31 +674,32 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 }
 
 // ============================================================
-// ✅ SORT BOTTOM SHEET
-// Đặt ở cuối file projects_screen.dart cho tiện, không cần tạo file riêng
+// SORT BOTTOM SHEET cho TrashScreen
+//
+// Copy pattern từ _SortBottomSheet trong projects_screen.dart
+// Không cần thay đổi logic, chỉ đổi tên class để tránh conflict
 // ============================================================
 
-class _SortBottomSheet extends StatefulWidget {
+class _TrashSortBottomSheet extends StatefulWidget {
   final SortProject currentSort;
   final ValueChanged<SortProject> onSortChanged;
 
-  const _SortBottomSheet({
+  const _TrashSortBottomSheet({
     required this.currentSort,
     required this.onSortChanged,
   });
 
   @override
-  State<_SortBottomSheet> createState() => _SortBottomSheetState();
+  State<_TrashSortBottomSheet> createState() => _TrashSortBottomSheetState();
 }
 
-class _SortBottomSheetState extends State<_SortBottomSheet> {
-  // _current: sort đang được highlight trong sheet
+class _TrashSortBottomSheetState extends State<_TrashSortBottomSheet> {
   late SortProject _current;
 
   @override
   void initState() {
     super.initState();
-    _current = widget.currentSort; // khởi đầu từ sort hiện tại của ViewModel
+    _current = widget.currentSort;
   }
 
   void _onTapItem(SortField field) {
@@ -656,21 +713,19 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
             : SortOrder.ascending,
       );
     } else {
-      // Tap item khác → chọn item mới, mặc định ascending
+      // Tap item mới → mặc định ascending
       next = SortProject(field: field, order: SortOrder.ascending);
     }
 
-    setState(() => _current = next); // cập nhật highlight trong sheet
-    widget.onSortChanged(next);      // báo về ProjectsScreen → vm.applySort(next)
-    // ✅ KHÔNG gọi Navigator.pop → sheet vẫn mở
+    setState(() => _current = next);
+    widget.onSortChanged(next); // Báo về TrashScreen → vm.applySort(next)
+    // ✅ Sheet vẫn mở để user có thể đổi lại nếu muốn
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: ColorApp.blackMain1E1E1E,
-      ),
+      decoration: const BoxDecoration(color: ColorApp.blackMain1E1E1E),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -684,19 +739,20 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
               borderRadius: BorderRadius.circular(3),
             ),
           ),
-
           // Tiêu đề
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Text(
               'Sort by',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-
-          // Các item sort
+          // Các item sort — lặp qua tất cả SortField
           ...SortField.values.map((field) => _buildSortItem(field)),
-
           SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
         ],
       ),
@@ -715,6 +771,7 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
+          // Highlight item đang được chọn
           color: isSelected ? Colors.white.withOpacity(0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
@@ -723,7 +780,8 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
             // Mũi tên chỉ hiện khi item đang được chọn
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+              transitionBuilder: (child, anim) =>
+                  FadeTransition(opacity: anim, child: child),
               child: isSelected
                   ? Icon(
                 _current.order == SortOrder.ascending

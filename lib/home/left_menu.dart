@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:matisse/colors/colors_app.dart';
 import 'package:matisse/extension/app_version.dart';
 import 'package:matisse/extension/setup_widget.dart';
+import 'package:matisse/home/trash_screen.dart';
 import 'package:matisse/images/image_app.dart';
 
 // ─────────────────────────────────────────────
@@ -160,7 +161,10 @@ class _ProjectsLeftMenuState extends State<ProjectsLeftMenu> {
               }),
               _buildSubItem('Trash', onTap: () {
                 Navigator.of(context).pop();
-                widget.onMyProjectsTap?.call(ProjectsLeftTap.trash);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => TrashScreen()),
+                );
               }),
             ],
           ),
