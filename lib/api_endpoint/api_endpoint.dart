@@ -10,8 +10,8 @@ class ApiEndpoint {
 
   static const String login         = '/oauth/token';
   static const String projects      = '/v4/cases/';
-  static const String profile       = '/v4/users/profile/';        // 👈 thêm
-  static const String clearSession  = '/v4/users/session/clear_session/'; // 👈 thêm
+  static const String profile       = '/v4/users/profile/';
+  static const String clearSession  = '/v4/users/session/clear_session/';
   static const String languages     = '/masters/languages';
   static const String forgotPassword = '/dbconnections/change_password';
 
